@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" class="{{ darkMode ? 'dark' : '' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical System - Dashboard</title>
+    <meta name="csrf-token" content="{{ csrfToken }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen">
+    <!-- Header -->
+    <header class="bg-blue-600 dark:bg-blue-800 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold">🏥 Medical System</h1>
+                    <p class="text-sm opacity-90">Welcome, {{ username }} ({{ role }})</p>
+                </div>
+                <div class="flex gap-3">
+                    <button id="settingsBtn" class="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg transition">
+                        ⚙️ Settings
+                    </button>
+                    <a href="logout.php" class="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition">
+                        🚪 Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Patient Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 border-b-2 border-blue-500 pb-2">
+                👤 Patient Management
+            </h2>
+            <form id="patientForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" id="patientID">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
+                    <input type="text" id="patientName" name="Patient_Name" required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Surname *</label>
+                    <input type="text" id="patientSurname" name="Patient_Surname" required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address Line 1</label>
+                    <input type="text" id="address1" name="Add_1" 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address Line 2</label>
+                    <input type="text" id="address2" name="Add_2" 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address Line 3</label>
+                    <input type="text" id="address3" name="Add_3" 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Country *</label>
+                    <select id="countrySelect" name="Country_Rec_Ref" required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">Select Country</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Town *</label>
+                    <select id="townSelect" name="Town_Rec_Ref" required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">Select Country First</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gender *</label>
+                    <select id="genderSelect" name="Gender_Rec_Ref" required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">Select Gender</option>
+                    </select>
+                </div>
+                
+                <div class="col-span-full flex gap-3">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        💾 Save Patient
+                    </button>
+                    <button type="button" id="patientReset" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        🔄 Reset Form
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Medication Form -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 border-b-2 border-green-500 pb-2">
+                💊 Medication Management
+            </h2>
+            <form id="medForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" id="medicationRef" name="Medication_Rec_Ref">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient *</label>
+                    <select id="patientSelect" name="Patient_ID" required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">Select Patient</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Medication * <span id="medLoadingIndicator" class="text-blue-500 text-xs" style="display:none;">Loading...</span>
+                    </label>
+                    <select id="medicationSelect" name="Medication_Name" required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">Loading medications...</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date *</label>
+                    <input type="date" id="systemDate" name="System_Date" required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remarks *</label>
+                    <input type="text" id="remarks" name="Remarks" required 
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="Enter medication remarks">
+                </div>
+                
+                <div class="col-span-full flex gap-3">
+                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        💾 Save Medication
+                    </button>
+                    <button type="button" id="medReset" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                        🔄 Reset Form
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Search & Pagination -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mb-4">
+            <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="🔍 Search patients, medications, towns..."
+                    class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                <div class="flex gap-2 items-center">
+                    <span id="paginationInfo" class="text-sm text-gray-600 dark:text-gray-400"></span>
+                    <button id="prevPageBtn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">←</button>
+                    <button id="nextPageBtn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">→</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table id="patientTable" class="w-full">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Name</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Surname</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Country</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Town</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Gender</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Medication</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Remarks</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tr><td colspan="10" class="px-4 py-8 text-center text-gray-500">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white">⚙️ Settings</h2>
+                <button class="close text-3xl text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <label for="darkModeToggle" class="text-gray-700 dark:text-gray-300">🌙 Dark Mode</label>
+                    <input type="checkbox" id="darkModeToggle" class="w-12 h-6">
+                </div>
+                
+                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <label for="tableLimitSelect" class="text-gray-700 dark:text-gray-300">📊 Rows per page</label>
+                    <select id="tableLimitSelect" class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                        <option value="10" {{ tableLimit == 10 ? 'selected' : '' }}>10</option>
+                        <option value="25" {{ tableLimit == 25 ? 'selected' : '' }}>25</option>
+                        <option value="50" {{ tableLimit == 50 ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ tableLimit == 100 ? 'selected' : '' }}>100</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button id="saveSettings" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg">
+                    Save
+                </button>
+                <button id="resetSettings" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg">
+                    Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>
