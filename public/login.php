@@ -1,5 +1,4 @@
 <?php
-// public/login.php - Login page
 session_start();
 
 // Redirect if already logged in

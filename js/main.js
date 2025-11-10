@@ -1,4 +1,3 @@
-// js/main.js - Updated for new path structure
 let allPatients = [];
 let allMedications = [];
 let allRecords = [];
@@ -8,7 +7,7 @@ let dropdownsData = {};
 let medicationsCache = [];
 let csrfToken = '';
 
-// ==================== HELPERS ====================
+//  HELPERS 
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -50,7 +49,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// ==================== API CALLS ====================
+//  API CALLS 
 async function loadMedications() {
     const medicationSelect = document.getElementById('medicationSelect');
     const loadingIndicator = document.getElementById('medLoadingIndicator');
@@ -243,7 +242,7 @@ function prevPage() {
     }
 }
 
-// ==================== SEARCH ====================
+//  SEARCH 
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
     if (!searchInput) return;
@@ -274,7 +273,7 @@ function setupSearch() {
     });
 }
 
-// ==================== CRUD OPERATIONS ====================
+//  CRUD OPERATIONS 
 window.editPatient = async function(id) {
     try {
         const res = await fetch(`../src/backend.php?action=get_patient&id=${id}`);
@@ -365,7 +364,7 @@ window.deleteMedication = async function(id) {
     }
 };
 
-// ==================== FORMS ====================
+//  FORMS 
 function setupForms() {
     document.getElementById('patientForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -428,7 +427,7 @@ function setupForms() {
     });
 }
 
-// ==================== SETTINGS ====================
+//  SETTINGS 
 function setupSettingsModal() {
     const modal = document.getElementById('settingsModal');
     const settingsBtn = document.getElementById('settingsBtn');
@@ -472,7 +471,7 @@ function setupSettingsModal() {
     });
 }
 
-// ==================== INIT ====================
+//  INIT 
 document.addEventListener('DOMContentLoaded', async () => {
     csrfToken = getCsrfToken();
     

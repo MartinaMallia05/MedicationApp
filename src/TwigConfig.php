@@ -11,7 +11,7 @@ class TwigConfig
         // Updated path to templates directory
         $loader = new FilesystemLoader(__DIR__ . '/../templates');
         $twig = new Environment($loader, [
-            'cache' => false, // Disable cache for development
+            'cache' => false, 
             'debug' => true,
             'autoescape' => 'html'
         ]);

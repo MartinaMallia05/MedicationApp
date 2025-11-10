@@ -1,5 +1,4 @@
 <?php
-// public/test_connection.php - Debug script to test database connection
 header('Content-Type: text/html; charset=utf-8');
 ?>
 <!DOCTYPE html>
@@ -19,7 +18,6 @@ header('Content-Type: text/html; charset=utf-8');
     <h1>🔍 Database Connection Test</h1>
     
     <?php
-    // Database credentials
     $host = 'localhost';
     $user = 'root';
     $pass = '';
@@ -41,7 +39,7 @@ header('Content-Type: text/html; charset=utf-8');
         exit;
     }
     
-    echo '<p class="success">✅ Connected successfully to database: ' . $db . '</p>';
+    echo '<p class="success">Connected successfully to database: ' . $db . '</p>';
     echo '</div>';
     
     // Check tables
@@ -54,9 +52,9 @@ header('Content-Type: text/html; charset=utf-8');
     foreach ($tables as $table) {
         $result = $conn->query("SHOW TABLES LIKE '$table'");
         if ($result->num_rows > 0) {
-            echo '<p class="success">✅ Table exists: ' . $table . '</p>';
+            echo '<p class="success">Table exists: ' . $table . '</p>';
         } else {
-            echo '<p class="error">❌ Table missing: ' . $table . '</p>';
+            echo '<p class="error">Table missing: ' . $table . '</p>';
             $missingTables[] = $table;
         }
     }
@@ -138,21 +136,21 @@ header('Content-Type: text/html; charset=utf-8');
     echo '<div class="box">';
     echo '<h2>Step 7: Composer Dependencies</h2>';
     if (file_exists('../vendor/autoload.php')) {
-        echo '<p class="success">✅ Composer vendor directory exists</p>';
+        echo '<p class="success">Composer vendor directory exists</p>';
         require_once '../vendor/autoload.php';
         if (class_exists('Twig\Environment')) {
-            echo '<p class="success">✅ Twig is installed and working</p>';
+            echo '<p class="success">Twig is installed and working</p>';
         } else {
-            echo '<p class="error">❌ Twig class not found</p>';
+            echo '<p class="error">Twig class not found</p>';
         }
     } else {
-        echo '<p class="error">❌ Composer vendor directory not found</p>';
+        echo '<p class="error">Composer vendor directory not found</p>';
         echo '<p>Run: <code>composer install</code></p>';
     }
     echo '</div>';
     
     echo '<div class="box">';
-    echo '<h2>✅ All Tests Complete</h2>';
+    echo '<h2>All Tests Complete</h2>';
     echo '<p>If all tests pass, your application should work correctly.</p>';
     echo '<p><a href="login.php">→ Go to Login Page</a></p>';
     echo '</div>';

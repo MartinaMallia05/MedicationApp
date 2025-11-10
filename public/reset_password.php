@@ -1,5 +1,4 @@
 <?php
-// public/reset_password.php
 session_start();
 
 if (isset($_SESSION['user_id'])) {

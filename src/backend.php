@@ -1,5 +1,4 @@
 <?php
-// Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -8,7 +7,7 @@ ob_start();
 header('Content-Type: application/json');
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;");
 
-// ==================== DATABASE CONNECTION ====================
+//  DATABASE CONNECTION 
 $host = 'localhost';
 $user = 'root';
 $pass = '';
@@ -22,7 +21,7 @@ if ($conn->connect_error) {
     exit;
 }
 
-// ==================== HELPER FUNCTION ====================
+//  HELPER FUNCTION 
 function respond($data, $code = 200)
 {
     http_response_code($code);
@@ -31,13 +30,13 @@ function respond($data, $code = 200)
     exit;
 }
 
-// ==================== GET ACTION ====================
+//  GET ACTION 
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-// ==================== PUBLIC ACTIONS ====================
+//  PUBLIC ACTIONS 
 if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password'])) {
 
-    // ==================== REGISTER ====================
+    //  REGISTER 
     if ($action === 'register') {
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
@@ -76,7 +75,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
         }
     }
 
-    // ==================== LOGIN ====================
+    //  LOGIN 
     if ($action === 'login') {
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
@@ -100,7 +99,6 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             $_SESSION['username'] = $username;
             $_SESSION['role'] = $user['Role'] ?? 'user';
             
-            // Generate CSRF token
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             
             $conn->query("UPDATE TBL_User SET Last_Login=NOW() WHERE User_ID=" . $user['User_ID']);
@@ -110,7 +108,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
         }
     }
 
-    // ==================== FORGOT PASSWORD ====================
+    //  FORGOT PASSWORD 
     if ($action === 'forgot_password') {
         $username = trim($_POST['username'] ?? '');
 
@@ -155,7 +153,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
         }
     }
 
-    // ==================== RESET PASSWORD ====================
+    //  RESET PASSWORD 
     if ($action === 'reset_password') {
         $username = trim($_POST['username'] ?? '');
         $token = trim($_POST['token'] ?? '');
@@ -197,12 +195,12 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
     }
 }
 
-// ==================== CHECK SESSION ====================
+//  CHECK SESSION 
 if (!isset($_SESSION['user_id'])) {
     respond(['success' => false, 'message' => 'Unauthorized. Please log in.'], 401);
 }
 
-// ==================== CSRF CHECK FOR POST ====================
+//  CSRF CHECK FOR POST 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
@@ -210,14 +208,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ==================== CRUD / DROPDOWNS ====================
+//  CRUD / DROPDOWNS 
 switch ($action) {
 
     case 'logout':
         session_destroy();
         respond(['success' => true, 'message' => 'Logged out']);
 
-    // ==================== GET DROPDOWNS ====================
+    //  GET DROPDOWNS 
     case 'get_dropdowns':
         $countries = $genders = $patients = [];
         $res = $conn->query("SELECT Country_Rec_Ref, Country FROM TBL_Country WHERE In_Use=1 ORDER BY Country");
@@ -234,7 +232,7 @@ switch ($action) {
 
         respond(['success' => true, 'countries' => $countries, 'genders' => $genders, 'patients' => $patients]);
 
-    // ==================== GET TOWNS ====================
+    //  GET TOWNS 
     case 'get_towns':
         $countryId = intval($_GET['countryId'] ?? 0);
         if ($countryId <= 0)
@@ -248,7 +246,7 @@ switch ($action) {
             $towns[] = $r;
         respond($towns);
 
-    // ==================== GET PATIENTS ====================
+    //  GET PATIENTS 
     case 'get_patients':
         $q = "SELECT 
                 p.Patient_ID, p.Patient_Name, p.Patient_Surname, p.Add_1, p.Add_2, p.Add_3,
@@ -269,7 +267,7 @@ switch ($action) {
             $patients[] = $r;
         respond(['success' => true, 'patients' => $patients]);
 
-    // ==================== GET SINGLE PATIENT ====================
+    //  GET SINGLE PATIENT 
     case 'get_patient':
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0)
@@ -282,7 +280,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Patient not found']);
         respond(['success' => true, 'patient' => $res->fetch_assoc()]);
 
-    // ==================== ADD PATIENT ====================
+    //  ADD PATIENT 
     case 'add_patient':
         $name = trim($_POST['Patient_Name'] ?? '');
         $surname = trim($_POST['Patient_Surname'] ?? '');
@@ -306,7 +304,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to add patient: ' . $stmt->error], 500);
         }
 
-    // ==================== UPDATE PATIENT ====================
+    //  UPDATE PATIENT 
     case 'update_patient':
         $id = intval($_POST['Patient_ID'] ?? 0);
         $name = trim($_POST['Patient_Name'] ?? '');
@@ -331,7 +329,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to update patient: ' . $stmt->error], 500);
         }
 
-    // ==================== DELETE PATIENT ====================
+    //  DELETE PATIENT 
     case 'delete_patient':
         $id = intval($_POST['Patient_ID'] ?? 0);
         if ($id <= 0)
@@ -350,7 +348,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to delete patient: ' . $stmt->error], 500);
         }
 
-    // ==================== GET MEDICATIONS ====================
+    //  GET MEDICATIONS 
     case 'get_medications':
         // Check if table exists first
         $tableCheck = $conn->query("SHOW TABLES LIKE 'TBL_Medication'");
@@ -376,7 +374,7 @@ switch ($action) {
             $medications[] = $r;
         respond(['success' => true, 'medications' => $medications]);
 
-    // ==================== GET SINGLE MEDICATION ====================
+    //  GET SINGLE MEDICATION 
     case 'get_medication':
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0)
@@ -389,7 +387,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Medication not found']);
         respond(['success' => true, 'medication' => $res->fetch_assoc()]);
 
-    // ==================== ADD MEDICATION ====================
+    //  ADD MEDICATION 
     case 'add_medication':
         $patientId = intval($_POST['Patient_ID'] ?? 0);
         $medName = trim($_POST['Medication_Name'] ?? '');
@@ -409,7 +407,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to add medication: ' . $stmt->error], 500);
         }
 
-    // ==================== UPDATE MEDICATION ====================
+    //  UPDATE MEDICATION 
     case 'update_medication':
         $id = intval($_POST['Medication_Rec_Ref'] ?? 0);
         $patientId = intval($_POST['Patient_ID'] ?? 0);
@@ -430,7 +428,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to update medication: ' . $stmt->error], 500);
         }
 
-    // ==================== DELETE MEDICATION ====================
+    //  DELETE MEDICATION 
     case 'delete_medication':
         $id = intval($_POST['Medication_Rec_Ref'] ?? 0);
         if ($id <= 0)

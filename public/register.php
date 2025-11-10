@@ -1,5 +1,4 @@
 <?php
-// public/register.php - Registration page
 session_start();
 
 // Redirect if already logged in

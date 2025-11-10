@@ -1,5 +1,4 @@
 <?php
-// public/index.php - Main application page
 session_start();
 
 // Check if user is logged in
@@ -8,7 +7,6 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
     exit;
 }
 
-// Generate CSRF token if not exists
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }

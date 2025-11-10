@@ -1,4 +1,3 @@
-// js/forgot_password.js
 document.addEventListener("DOMContentLoaded", () => {
   const forgotForm = document.getElementById("forgotPasswordForm");
   const forgotMessage = document.getElementById("forgotMessage");

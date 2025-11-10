@@ -7,12 +7,6 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-/**
- * Fixed Medication API Integration
- * Uses multiple fallback strategies for medication data
- */
-
-// Comprehensive medication list
 $fallbackMeds = [
     'Acetaminophen (Tylenol)',
     'Amoxicillin',
@@ -100,7 +94,6 @@ try {
                 if (json_last_error() === JSON_ERROR_NONE && !empty($data)) {
                     // Try to extract medication names from various API response structures
                     if (isset($data[3]) && is_array($data[3])) {
-                        // NIH RxTerms API structure
                         $apiData = array_slice($data[3], 0, 50);
                         break;
                     } elseif (isset($data['diseases']) && is_array($data['diseases'])) {

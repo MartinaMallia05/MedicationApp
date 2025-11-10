@@ -1,4 +1,4 @@
-/* ==================== ROOT VARIABLES ==================== */
+/*  ROOT VARIABLES  */
 :root {
   --bg-primary: #f5f5f5;
   --bg-secondary: #ffffff;
@@ -18,7 +18,7 @@
   --shadow: rgba(0, 0, 0, 0.1);
 }
 
-/* ==================== DARK MODE VARIABLES ==================== */
+/*  DARK MODE VARIABLES  */
 .dark-mode {
   --bg-primary: #1a1a1a;
   --bg-secondary: #2d2d2d;
@@ -38,7 +38,7 @@
   --shadow: rgba(0, 0, 0, 0.3);
 }
 
-/* ==================== BASE STYLES ==================== */
+/*  BASE STYLES  */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -71,7 +71,7 @@ h2 {
   padding-bottom: 10px;
 }
 
-/* ==================== USER HEADER ==================== */
+/*  USER HEADER  */
 .user-header {
   background-color: var(--header-bg);
   color: var(--header-text);
@@ -131,7 +131,7 @@ h2 {
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* ==================== MODAL ==================== */
+/*  MODAL  */
 .modal {
   display: none;
   position: fixed;
@@ -266,7 +266,7 @@ h2 {
   box-shadow: 0 4px 8px var(--shadow);
 }
 
-/* ==================== SECTIONS ==================== */
+/*  SECTIONS  */
 .section-container {
   background-color: var(--bg-secondary);
   border-radius: 8px;
@@ -282,7 +282,7 @@ hr {
   margin: 30px 0;
 }
 
-/* ==================== FORMS ==================== */
+/*  FORMS  */
 form {
   display: grid;
   gap: 15px;
@@ -329,7 +329,7 @@ form {
   margin-left: 10px;
 }
 
-/* ==================== BUTTONS ==================== */
+/*  BUTTONS  */
 .form-buttons {
   display: flex;
   gap: 10px;
@@ -376,7 +376,7 @@ button:disabled {
   transform: none;
 }
 
-/* ==================== PAGINATION ==================== */
+/*  PAGINATION  */
 .pagination-controls {
   display: flex;
   justify-content: space-between;
@@ -435,7 +435,7 @@ button:disabled {
   background-color: var(--accent-hover);
 }
 
-/* ==================== TABLE ==================== */
+/*  TABLE  */
 .table-container {
   overflow-x: auto;
   background-color: var(--bg-secondary);
@@ -491,7 +491,7 @@ td button {
   margin: 2px;
 }
 
-/* ==================== AUTH PAGES ==================== */
+/*  AUTH PAGES  */
 .auth-container {
   display: flex;
   justify-content: center;
@@ -557,7 +557,7 @@ td button {
   text-decoration: underline;
 }
 
-/* ==================== RESPONSIVE ==================== */
+/*  RESPONSIVE  */
 @media (max-width: 768px) {
   body {
     padding: 10px;
@@ -602,7 +602,7 @@ td button {
   }
 }
 
-/* ==================== PRINT STYLES ==================== */
+/*  PRINT STYLES  */
 @media print {
   .user-header,
   .form-buttons,

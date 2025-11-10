@@ -1,4 +1,3 @@
-// js/reset_password.js
 document.addEventListener("DOMContentLoaded", () => {
   const resetForm = document.getElementById("resetPasswordForm");
   const resetMessage = document.getElementById("resetMessage");
