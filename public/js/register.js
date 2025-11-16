@@ -10,8 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirm_password").value;
+    const role = document.getElementById("role").value;
     
-    if (!username || !password || !confirmPassword) {
+    if (!username || !password || !confirmPassword || !role) {
       showMessage("Please fill in all fields", "error");
       return;
     }
@@ -39,6 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("username", username);
     formData.append("password", password);
     formData.append("confirm_password", confirmPassword);
+    formData.append("role", role);
     
     try {
       const res = await fetch("backend.php", {
@@ -46,9 +48,18 @@ document.addEventListener("DOMContentLoaded", () => {
         body: formData
       });
       
-      if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+      // Parse JSON response even for error status codes
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error(`Server error: ${res.status}`);
+      }
       
-      const data = await res.json();
+      if (!res.ok) {
+        const errorMsg = data && data.message ? data.message : `HTTP error: ${res.status}`;
+        throw new Error(errorMsg);
+      }
       
       if (data.success) {
         showMessage(data.message + " Redirecting to login...", "success");

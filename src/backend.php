@@ -268,7 +268,7 @@ switch ($action) {
             LEFT JOIN TBL_Country c ON p.Country_Rec_Ref = c.Country_Rec_Ref
             LEFT JOIN TBL_Town t ON p.Town_Rec_Ref = t.Town_Rec_Ref
             LEFT JOIN TBL_Gender g ON p.Gender_Rec_Ref = g.Gender_Rec_Ref
-            ORDER BY p.Patient_ID ASC";
+            ORDER BY p.Patient_ID DESC";
 
         $res = $conn->query($q);
         if (!$res)
@@ -391,7 +391,7 @@ switch ($action) {
             LEFT JOIN TBL_Country c ON p.Country_Rec_Ref = c.Country_Rec_Ref
             LEFT JOIN TBL_Town t ON p.Town_Rec_Ref = t.Town_Rec_Ref
             LEFT JOIN TBL_Gender g ON p.Gender_Rec_Ref = g.Gender_Rec_Ref
-            ORDER BY m.System_Date ASC";
+            ORDER BY m.System_Date DESC";
         
         $res = $conn->query($q);
         if (!$res) {
