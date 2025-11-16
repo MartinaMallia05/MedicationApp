@@ -37,6 +37,35 @@ function respond($data, $code = 200)
 // ==================== GET ACTION ====================
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
+// ==================== SESSION-BASED REQUEST DEDUPLICATION ====================
+if (!isset($_SESSION['last_request'])) {
+    $_SESSION['last_request'] = [];
+}
+
+// Only apply deduplication to registration, not login
+if ($action === 'register') {
+    // Create request fingerprint for registration only
+    $request_fingerprint = $action . '_' . md5($username ?? '');
+    $current_time = time();
+    
+    // Check if same registration request was made within last 3 seconds
+    if (isset($_SESSION['last_request'][$request_fingerprint]) && 
+        ($current_time - $_SESSION['last_request'][$request_fingerprint]) < 3) {
+        respond(['success' => false, 'message' => 'Please wait before trying again.'], 429);
+    }
+    
+    // Store current request only after successful validation
+    // This prevents blocking corrections to invalid forms
+}
+
+// Clean up old requests (older than 10 seconds)
+$current_time = time();
+foreach ($_SESSION['last_request'] as $fp => $time) {
+    if (($current_time - $time) > 10) {
+        unset($_SESSION['last_request'][$fp]);
+    }
+}
+
 // ==================== PUBLIC ACTIONS ====================
 if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password'])) {
 
@@ -69,20 +98,43 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             respond(['success' => false, 'message' => 'Invalid role selected'], 400);
         }
 
-        $stmt = $conn->prepare("SELECT User_ID FROM TBL_User WHERE Username=?");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $stmt->store_result();
-        if ($stmt->num_rows > 0)
-            respond(['success' => false, 'message' => 'Username already exists'], 400);
-
+        // Use a single query with error handling for better atomicity
         $hash = password_hash($password, PASSWORD_DEFAULT);
+        
+        // First check if user exists (additional safety layer)
+        $checkStmt = $conn->prepare("SELECT COUNT(*) as count FROM TBL_User WHERE Username = ?");
+        $checkStmt->bind_param("s", $username);
+        $checkStmt->execute();
+        $result = $checkStmt->get_result();
+        $row = $result->fetch_assoc();
+        $checkStmt->close();
+        
+        if ($row['count'] > 0) {
+            respond(['success' => false, 'message' => 'Username already exists'], 400);
+        }
+        
+        // Try to insert directly - let MySQL unique constraint handle duplicates
         $stmt = $conn->prepare("INSERT INTO TBL_User (Username, Password_Hash, Role) VALUES (?,?,?)");
         $stmt->bind_param("sss", $username, $hash, $role);
+        
         if ($stmt->execute()) {
+            $stmt->close();
+            
+            // Store successful registration to prevent immediate duplicates
+            $request_fingerprint = 'register_' . md5($username);
+            $_SESSION['last_request'][$request_fingerprint] = time();
+            
             respond(['success' => true, 'message' => 'Account created successfully!']);
         } else {
-            respond(['success' => false, 'message' => 'Registration failed: ' . $stmt->error], 500);
+            $error = $stmt->error;
+            $stmt->close();
+            
+            // Check if it's a duplicate entry error
+            if (strpos($error, 'Duplicate entry') !== false) {
+                respond(['success' => false, 'message' => 'Username already exists'], 400);
+            } else {
+                respond(['success' => false, 'message' => 'Registration failed: ' . $error], 500);
+            }
         }
     }
 
@@ -262,12 +314,13 @@ switch ($action) {
     case 'get_patients':
         $q = "SELECT 
                 p.Patient_ID, p.Patient_Number, p.Patient_Name, p.Patient_Surname, p.DOB, p.Add_1, p.Add_2, p.Add_3,
-                p.Town_Rec_Ref, p.Country_Rec_Ref, p.Gender_Rec_Ref,
-                c.Country, t.Town, g.Gender
+                p.Town_Rec_Ref, p.Country_Rec_Ref, p.Gender_Rec_Ref, p.Created_At,
+                c.Country, t.Town, g.Gender, u.Username as Created_By
             FROM TBL_Patient p
             LEFT JOIN TBL_Country c ON p.Country_Rec_Ref = c.Country_Rec_Ref
             LEFT JOIN TBL_Town t ON p.Town_Rec_Ref = t.Town_Rec_Ref
             LEFT JOIN TBL_Gender g ON p.Gender_Rec_Ref = g.Gender_Rec_Ref
+            LEFT JOIN TBL_User u ON p.Created_By_User_ID = u.User_ID
             ORDER BY p.Patient_ID DESC";
 
         $res = $conn->query($q);
@@ -314,8 +367,11 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Patient Number must be 7 digits followed by a letter (e.g., 1234567A)'], 400);
         }
 
-        $stmt = $conn->prepare("INSERT INTO TBL_Patient (Patient_Number, Patient_Name, Patient_Surname, DOB, Add_1, Add_2, Add_3, Town_Rec_Ref, Country_Rec_Ref, Gender_Rec_Ref) VALUES (?,?,?,?,?,?,?,?,?,?)");
-        $stmt->bind_param("sssssssiii", $patientNumber, $name, $surname, $dob, $add1, $add2, $add3, $town, $country, $gender);
+        // Get current user ID for audit trail
+        $currentUserId = $_SESSION['user_id'] ?? 1; // Fallback to user 1 if session issue
+
+        $stmt = $conn->prepare("INSERT INTO TBL_Patient (Patient_Number, Patient_Name, Patient_Surname, DOB, Add_1, Add_2, Add_3, Town_Rec_Ref, Country_Rec_Ref, Gender_Rec_Ref, Created_By_User_ID) VALUES (?,?,?,?,?,?,?,?,?,?,?)");
+        $stmt->bind_param("sssssssiiii", $patientNumber, $name, $surname, $dob, $add1, $add2, $add3, $town, $country, $gender, $currentUserId);
 
         if ($stmt->execute()) {
             respond(['success' => true, 'message' => 'Patient added successfully', 'patient_id' => $stmt->insert_id]);
@@ -383,15 +439,16 @@ switch ($action) {
         }
         
         $q = "SELECT 
-                m.Medication_Rec_Ref, m.System_Date, m.Remarks, m.Medication_Name,
+                m.Medication_Rec_Ref, m.System_Date, m.Remarks, m.Medication_Name, m.Created_At,
                 p.Patient_ID, p.Patient_Number, p.Patient_Name, p.Patient_Surname, p.Country_Rec_Ref, p.Town_Rec_Ref, p.Gender_Rec_Ref,
-                c.Country, t.Town, g.Gender
+                c.Country, t.Town, g.Gender, u.Username as Prescribed_By
             FROM TBL_Medication m
             INNER JOIN TBL_Patient p ON m.Patient_ID = p.Patient_ID
             LEFT JOIN TBL_Country c ON p.Country_Rec_Ref = c.Country_Rec_Ref
             LEFT JOIN TBL_Town t ON p.Town_Rec_Ref = t.Town_Rec_Ref
             LEFT JOIN TBL_Gender g ON p.Gender_Rec_Ref = g.Gender_Rec_Ref
-            ORDER BY m.System_Date DESC";
+            LEFT JOIN TBL_User u ON m.Prescribed_By_User_ID = u.User_ID
+            ORDER BY m.Medication_Rec_Ref DESC";
         
         $res = $conn->query($q);
         if (!$res) {
@@ -424,6 +481,12 @@ switch ($action) {
 
     // ==================== ADD MEDICATION ====================
     case 'add_medication':
+        // Check user role - only doctors and nurses can prescribe medications
+        $userRole = $_SESSION['role'] ?? '';
+        if (!in_array($userRole, ['doctor', 'nurse'])) {
+            respond(['success' => false, 'message' => 'Access denied. Only doctors and nurses can prescribe medications. Current role: ' . $userRole], 403);
+        }
+        
         $patientId = intval($_POST['Patient_ID'] ?? 0);
         $medName = trim($_POST['Medication_Name'] ?? '');
         $systemDate = trim($_POST['System_Date'] ?? '');
@@ -433,8 +496,11 @@ switch ($action) {
             respond(['success' => false, 'message' => 'All fields required'], 400);
         }
         
-        $stmt = $conn->prepare("INSERT INTO TBL_Medication (Patient_ID, Medication_Name, System_Date, Remarks) VALUES (?,?,?,?)");
-        $stmt->bind_param("isss", $patientId, $medName, $systemDate, $remarks);
+        // Get current user ID for audit trail (who prescribed this medication)
+        $currentUserId = $_SESSION['user_id'] ?? 1; // Fallback to user 1 if session issue
+        
+        $stmt = $conn->prepare("INSERT INTO TBL_Medication (Patient_ID, Medication_Name, System_Date, Remarks, Prescribed_By_User_ID) VALUES (?,?,?,?,?)");
+        $stmt->bind_param("isssi", $patientId, $medName, $systemDate, $remarks, $currentUserId);
         
         if ($stmt->execute()) {
             respond(['success' => true, 'message' => 'Medication added successfully', 'medication_id' => $stmt->insert_id]);

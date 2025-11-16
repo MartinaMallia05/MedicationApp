@@ -6,7 +6,7 @@ async function loadMedicationRecords() {
     const tbody = document.getElementById('medicationsTableBody');
     if (!tbody) return;
     
-    tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Loading medications...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Loading medications...</td></tr>';
 
     try {
         const res = await fetch('backend.php?action=get_medications');
@@ -18,7 +18,7 @@ async function loadMedicationRecords() {
         renderMedicationsTable();
     } catch (err) {
         console.error('Load medications error:', err);
-        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-red-500">Error: ${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-500">Error: ${err.message}</td></tr>`;
     }
 }
 
@@ -30,7 +30,7 @@ function renderMedicationsTable() {
     tbody.innerHTML = '';
     
     if (!allMedications.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No medications found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No medications found</td></tr>';
         return;
     }
 
@@ -46,6 +46,11 @@ function renderMedicationsTable() {
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Patient_Surname)}, ${window.commonUtils.escapeHtml(med.Patient_Name)}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Medication_Name) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.formatDate(med.System_Date)}</td>
+            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${med.Prescribed_By ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}">
+                    ${med.Prescribed_By ? '👨‍⚕️ ' + window.commonUtils.escapeHtml(med.Prescribed_By) : '❓ Unknown'}
+                </span>
+            </td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Remarks) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm">
                 <div class="flex gap-1 flex-wrap">
