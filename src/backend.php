@@ -238,7 +238,7 @@ switch ($action) {
         while ($r = $res->fetch_assoc())
             $genders[] = $r;
 
-        $res = $conn->query("SELECT Patient_ID, Patient_Name, Patient_Surname FROM TBL_Patient ORDER BY Patient_Surname,Patient_Name");
+        $res = $conn->query("SELECT Patient_ID, Patient_Name, Patient_Surname FROM TBL_Patient ORDER BY Patient_ID ASC");
         while ($r = $res->fetch_assoc())
             $patients[] = $r;
 
@@ -268,7 +268,7 @@ switch ($action) {
             LEFT JOIN TBL_Country c ON p.Country_Rec_Ref = c.Country_Rec_Ref
             LEFT JOIN TBL_Town t ON p.Town_Rec_Ref = t.Town_Rec_Ref
             LEFT JOIN TBL_Gender g ON p.Gender_Rec_Ref = g.Gender_Rec_Ref
-            ORDER BY p.Patient_Surname, p.Patient_Name";
+            ORDER BY p.Patient_ID ASC";
 
         $res = $conn->query($q);
         if (!$res)
@@ -391,7 +391,7 @@ switch ($action) {
             LEFT JOIN TBL_Country c ON p.Country_Rec_Ref = c.Country_Rec_Ref
             LEFT JOIN TBL_Town t ON p.Town_Rec_Ref = t.Town_Rec_Ref
             LEFT JOIN TBL_Gender g ON p.Gender_Rec_Ref = g.Gender_Rec_Ref
-            ORDER BY m.System_Date DESC";
+            ORDER BY m.System_Date ASC";
         
         $res = $conn->query($q);
         if (!$res) {

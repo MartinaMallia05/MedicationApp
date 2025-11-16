@@ -36,9 +36,9 @@ function renderPatientsTable() {
 
     // Get table limit from user-specific settings
     const tableLimit = parseInt(window.commonUtils.getUserSetting('table_limit', '10'));
-    const recentPatients = allPatients.slice(-tableLimit).reverse();
+    const recentPatients = allPatients.slice(0, tableLimit);
 
-    recentPatients.forEach(patient => {
+    recentPatients.forEach((patient, index) => {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition';
         

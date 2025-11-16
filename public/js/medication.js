@@ -36,7 +36,7 @@ function renderMedicationsTable() {
 
     // Get table limit from user-specific settings
     const tableLimit = parseInt(window.commonUtils.getUserSetting('table_limit', '10'));
-    const recentMedications = allMedications.slice(-tableLimit).reverse();
+    const recentMedications = allMedications.slice(0, tableLimit);
 
     recentMedications.forEach(med => {
         const row = document.createElement('tr');

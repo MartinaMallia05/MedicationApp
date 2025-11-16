@@ -35,6 +35,9 @@ async function loadRecords() {
             Town: med.Town || 'N/A',
             Gender: med.Gender || 'N/A'
         }));
+        
+        // Sort by System_Date in ascending order (oldest first) for consistency
+        allRecords.sort((a, b) => new Date(a.System_Date) - new Date(b.System_Date));
 
         filteredRecords = [...allRecords];
         currentPage = 1;
