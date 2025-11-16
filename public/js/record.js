@@ -30,6 +30,7 @@ async function loadRecords() {
             Patient_ID: med.Patient_ID,
             Patient_Name: med.Patient_Name,
             Patient_Surname: med.Patient_Surname,
+            Patient_Number: med.Patient_Number || 'N/A',
             Country: med.Country || 'N/A',
             Town: med.Town || 'N/A',
             Gender: med.Gender || 'N/A'
@@ -66,14 +67,14 @@ function renderRecordsTable() {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition';
         row.innerHTML = `
-            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${record.Patient_ID || 'N/A'}</td>
+            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Patient_Number) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Patient_Name) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Patient_Surname) || 'N/A'}</td>
+            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Gender) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Country) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Town) || 'N/A'}</td>
-            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Gender) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Medication_Name) || 'N/A'}</td>
-            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${record.System_Date || 'N/A'}</td>
+            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.formatDate(record.System_Date)}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Remarks) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm">
                 <div class="flex gap-1 flex-wrap">

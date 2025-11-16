@@ -1,9 +1,9 @@
 // js/common.js - Shared utilities and functions across all pages
 
-// ==================== GLOBAL VARIABLES ====================
+// GLOBAL VARIABLES
 let csrfToken = '';
 
-// ==================== HELPER FUNCTIONS ====================
+// HELPER FUNCTIONS
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -27,6 +27,21 @@ function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
+// Format date to DD-MM-YYYY format
+function formatDate(dateString) {
+    if (!dateString || dateString === 'N/A') return 'N/A';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'N/A';
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}-${month}-${year}`;
+    } catch (e) {
+        return 'N/A';
+    }
+}
+
 function showNotification(message, type = 'info') {
     const colors = {
         success: 'bg-green-500',
@@ -46,7 +61,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// ==================== API FUNCTIONS ====================
+// API FUNCTIONS
 async function loadDropdowns() {
     try {
         const res = await fetch('backend.php?action=get_dropdowns');
@@ -152,7 +167,7 @@ async function loadMedications() {
     }
 }
 
-// ==================== USER-SPECIFIC SETTINGS (localStorage) ====================
+// USER-SPECIFIC SETTINGS (localStorage)
 function getUserId() {
     // ALWAYS get fresh user ID from meta tag on page load
     // This ensures we use the currently logged-in user's ID
@@ -200,7 +215,7 @@ function setUserSetting(key, value) {
     console.log(`Saved ${storageKey}:`, value);
 }
 
-// ==================== SETTINGS MODAL ====================
+// SETTINGS MODAL
 function setupSettingsModal() {
     const modal = document.getElementById('settingsModal');
     const settingsBtn = document.getElementById('settingsBtn');
@@ -261,7 +276,7 @@ function setupSettingsModal() {
     });
 }
 
-// ==================== DARK MODE INITIALIZATION ====================
+// DARK MODE INITIALIZATION
 function initializeDarkMode() {
     // Load user-specific dark mode setting
     const darkMode = getUserSetting('dark_mode') === 'true';
@@ -270,11 +285,72 @@ function initializeDarkMode() {
     }
 }
 
-// ==================== COOKIE CONSENT ====================
+// USER-SCOPED CONSENT HELPERS
+// Generate user-specific consent storage key for per-user privacy preferences
+function getConsentKey(key) {
+    const uid = getUserId();
+    return `consent_${uid}_${key}`;
+}
+
+function isCookieDecisionMade() {
+    const userConsent = localStorage.getItem(getConsentKey('cookie_consent'));
+    return sessionStorage.getItem('cookie_decision_made') === 'true' || userConsent === 'accepted';
+}
+
+function ensureCookieBannerVisible() {
+    try {
+        const userConsent = localStorage.getItem(getConsentKey('cookie_consent')) || localStorage.getItem('cookie_consent');
+        console.log('[banner] checking consent for user:', getUserId(), 'value:', userConsent);
+        if (userConsent !== 'accepted') {
+            if (!document.getElementById('cookieConsentBanner')) {
+                console.log('[banner] creating new banner');
+                showCookieConsent();
+            } else {
+                const existing = document.getElementById('cookieConsentBanner');
+                existing.style.display = 'block';
+                console.log('[banner] showing existing banner');
+            }
+        }
+    } catch (e) { console.error('[banner] error:', e); }
+}
+
+function resetCookieConsent(forceShow = true) {
+    try {
+        // Clear global
+        localStorage.removeItem('cookie_consent');
+        localStorage.removeItem('analytics_enabled');
+        localStorage.removeItem('cookie_consent_source');
+        localStorage.removeItem('cookie_consent_decided_at');
+        // Clear user-scoped
+        localStorage.removeItem(getConsentKey('cookie_consent'));
+        localStorage.removeItem(getConsentKey('analytics_enabled'));
+        localStorage.removeItem(getConsentKey('cookie_consent_source'));
+        localStorage.removeItem(getConsentKey('cookie_consent_decided_at'));
+        sessionStorage.removeItem('cookie_decision_made');
+        const existing = document.getElementById('cookieConsentBanner');
+        if (existing) existing.remove();
+        if (forceShow) {
+            showCookieConsent();
+            setTimeout(ensureCookieBannerVisible, 100);
+        }
+        console.log('[cookies] consent reset');
+    } catch (e) { console.error('[reset] error:', e); }
+}
+
+// COOKIE CONSENT
 function showCookieConsent() {
-    // Check if user has already made a choice using localStorage
-    const cookieConsent = localStorage.getItem('cookie_consent');
-    if (cookieConsent) return; // User has already decided, don't show again
+    // Only suppress banner if user ACCEPTED previously (not rejected)
+    const userConsentKey = getConsentKey('cookie_consent');
+    let cookieConsent = localStorage.getItem(userConsentKey) ?? localStorage.getItem('cookie_consent');
+    console.log('[cookies] consent value for user', getUserId(), ':', cookieConsent);
+    if (cookieConsent === 'accepted') return;
+    
+    // Avoid duplicate banners
+    const existing = document.getElementById('cookieConsentBanner');
+    if (existing) {
+        existing.style.display = 'block';
+        return;
+    }
     
     // Create cookie consent banner
     const banner = document.createElement('div');
@@ -286,15 +362,15 @@ function showCookieConsent() {
                 <div class="flex-1">
                     <p class="text-sm md:text-base">
                         🍪 We use cookies to enhance your experience, remember your preferences, and analyze usage patterns. 
-                        By using our application, you agree to our use of cookies.
+                        <strong>By default, we reject cookies to protect your privacy.</strong> You can choose to accept them below.
                     </p>
                 </div>
                 <div class="flex gap-3 flex-shrink-0">
+                    <button id="rejectCookies" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition">
+                        ✗ Reject (Default)
+                    </button>
                     <button id="acceptCookies" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition">
                         ✓ Accept
-                    </button>
-                    <button id="rejectCookies" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition">
-                        ✗ Reject
                     </button>
                 </div>
             </div>
@@ -305,46 +381,111 @@ function showCookieConsent() {
     
     // Accept cookies
     document.getElementById('acceptCookies').addEventListener('click', () => {
+        const now = String(Date.now());
+        // Persist per-user
+        localStorage.setItem(getConsentKey('cookie_consent'), 'accepted');
+        localStorage.setItem(getConsentKey('analytics_enabled'), 'true');
+        localStorage.setItem(getConsentKey('cookie_consent_source'), 'user');
+        localStorage.setItem(getConsentKey('cookie_consent_decided_at'), now);
+        // Legacy/global for backward-compat
         localStorage.setItem('cookie_consent', 'accepted');
         localStorage.setItem('analytics_enabled', 'true');
+        localStorage.setItem('cookie_consent_source', 'user');
+        localStorage.setItem('cookie_consent_decided_at', now);
+        sessionStorage.setItem('cookie_decision_made', 'true');
+        console.log('[cookies] accepted for user', getUserId());
         banner.classList.add('animate-fade-out');
         setTimeout(() => banner.remove(), 300);
         showNotification('Thank you! Cookies enabled.', 'success');
+        try { document.dispatchEvent(new CustomEvent('cookie-decision-made', { detail: { decision: 'accepted' } })); } catch (e) {}
     });
     
     // Reject cookies
     document.getElementById('rejectCookies').addEventListener('click', () => {
-        localStorage.setItem('cookie_consent', 'rejected');
+        const now = String(Date.now());
+        localStorage.removeItem(getConsentKey('cookie_consent'));
+        localStorage.setItem(getConsentKey('analytics_enabled'), 'false');
+        localStorage.setItem(getConsentKey('cookie_consent_source'), 'user');
+        localStorage.setItem(getConsentKey('cookie_consent_decided_at'), now);
+        // Legacy/global for backward-compat
+        localStorage.removeItem('cookie_consent');
         localStorage.setItem('analytics_enabled', 'false');
+        localStorage.setItem('cookie_consent_source', 'user');
+        localStorage.setItem('cookie_consent_decided_at', now);
+        sessionStorage.setItem('cookie_decision_made', 'true');
+        console.log('[cookies] rejected for user', getUserId());
         banner.classList.add('animate-fade-out');
         setTimeout(() => banner.remove(), 300);
         showNotification('Cookies rejected. Essential cookies only.', 'info');
+        try { document.dispatchEvent(new CustomEvent('cookie-decision-made', { detail: { decision: 'rejected' } })); } catch (e) {}
     });
 }
 
-// ==================== INITIALIZATION ====================
+// INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
     csrfToken = getCsrfToken();
+    
+    // Development helper: Reset consent on localhost for testing (preserves user decisions)
+    // BUT preserve if user explicitly accepted to avoid annoying them
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        const userId = getUserId();
+        const userAccepted = localStorage.getItem(getConsentKey('cookie_consent')) === 'accepted';
+        const globalAccepted = localStorage.getItem('cookie_consent') === 'accepted';
+        const wasAcceptedByUser = localStorage.getItem(getConsentKey('cookie_consent_source')) === 'user' || 
+                                 localStorage.getItem('cookie_consent_source') === 'user';
+        
+        if (!userAccepted && !globalAccepted) {
+            console.log('[dev] Force clearing consent data for testing - user:', userId);
+            localStorage.removeItem('cookie_consent');
+            localStorage.removeItem('analytics_enabled');
+            localStorage.removeItem('cookie_consent_source');
+            localStorage.removeItem('cookie_consent_decided_at');
+            localStorage.removeItem(getConsentKey('cookie_consent'));
+            localStorage.removeItem(getConsentKey('analytics_enabled'));
+            localStorage.removeItem(getConsentKey('cookie_consent_source'));
+            localStorage.removeItem(getConsentKey('cookie_consent_decided_at'));
+            sessionStorage.removeItem('cookie_decision_made');
+        } else {
+            console.log('[dev] Preserving user acceptance - user:', userId, 'accepted:', userAccepted || globalAccepted);
+        }
+    }
+    
+    // Optimize: If previously accepted, mark as decided for this session to avoid rechecking
+    if ((localStorage.getItem(getConsentKey('cookie_consent')) ?? localStorage.getItem('cookie_consent')) === 'accepted') {
+        sessionStorage.setItem('cookie_decision_made', 'true');
+    }
     initializeDarkMode();
-    showCookieConsent(); // Show cookie consent for new users
+    showCookieConsent(); // Primary show for new users
+    setTimeout(ensureCookieBannerVisible, 200); // Safety to ensure it appears
     
     // Setup settings modal if it exists
     if (document.getElementById('settingsModal')) {
         setupSettingsModal();
     }
+    
+    // Expose dev helpers
+    try {
+        window.resetCookieConsent = resetCookieConsent;
+        window.ensureCookieBannerVisible = ensureCookieBannerVisible;
+    } catch (e) {}
 });
 
-// ==================== EXPORT FOR USE IN OTHER SCRIPTS ====================
+// EXPORT FOR USE IN OTHER SCRIPTS
 window.commonUtils = {
     getCookie,
     setCookie,
     getCsrfToken,
     escapeHtml,
+    formatDate,
     showNotification,
     loadDropdowns,
     loadTowns,
     loadMedications,
     getUserSetting,
     setUserSetting,
-    getUserId
+    getUserId,
+    getConsentKey,
+    resetCookieConsent,
+    ensureCookieBannerVisible,
+    isCookieDecisionMade
 };

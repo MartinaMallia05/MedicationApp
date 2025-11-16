@@ -6,7 +6,7 @@ async function loadPatients() {
     const tbody = document.getElementById('patientsTableBody');
     if (!tbody) return;
     
-    tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">Loading patients...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500">Loading patients...</td></tr>';
 
     try {
         const res = await fetch('backend.php?action=get_patients');
@@ -30,7 +30,7 @@ function renderPatientsTable() {
     tbody.innerHTML = '';
     
     if (!allPatients.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No patients found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">No patients found</td></tr>';
         return;
     }
 
@@ -47,11 +47,10 @@ function renderPatientsTable() {
         const address = addressParts.length > 0 ? addressParts.join(', ') : 'N/A';
         
         row.innerHTML = `
-            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${patient.Patient_ID}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(patient.Patient_Number) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(patient.Patient_Name)}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(patient.Patient_Surname)}</td>
-            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${patient.DOB || 'N/A'}</td>
+            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.formatDate(patient.DOB)}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(address)}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(patient.Country) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(patient.Town) || 'N/A'}</td>

@@ -28,7 +28,6 @@
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 min-h-screen">
-    <!-- Header -->
     <header class="bg-blue-600 dark:bg-blue-800 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
             <div class="flex justify-between items-center">
@@ -48,7 +47,6 @@
         </div>
     </header>
 
-    <!-- Navigation -->
     <nav class="bg-white dark:bg-gray-800 shadow-md">
         <div class="container mx-auto px-4">
             <div class="flex gap-4 py-3">
@@ -66,7 +64,7 @@
     </nav>
 
     <div class="container mx-auto px-4 py-8 max-w-7xl">
-        <!-- Medication Form -->
+        <!-- Medication Entry Form -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
             <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 border-b-2 border-green-500 pb-2">
                 💊 Medication Management
@@ -75,48 +73,85 @@
                 <input type="hidden" id="medicationRef" name="Medication_Rec_Ref">
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient *</label>
-                    <select id="patientSelect" name="Patient_ID" required 
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                        <option value="">Select Patient</option>
-                    </select>
+                    <label for="patientSearch" 
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Patient * (Search by name, surname, or patient ID card)
+                    </label>
+                    <input type="text" 
+                           id="patientSearch" 
+                           placeholder="Type to search patients..." 
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 
+                                  rounded-lg focus:ring-2 focus:ring-green-500 
+                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <input type="hidden" id="selectedPatientId" name="Patient_ID" required>
+                    <div id="patientDropdown" 
+                         class="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-300 
+                                dark:border-gray-600 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto hidden">
+                    </div>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Medication * <span id="medLoadingIndicator" class="text-blue-500 text-xs" style="display:none;">Loading...</span>
+                    <label for="medicationSelect" 
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Medication * 
+                        <span id="medLoadingIndicator" 
+                              class="text-blue-500 text-xs" 
+                              style="display:none;">Loading...</span>
                     </label>
-                    <select id="medicationSelect" name="Medication_Name" required 
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <select id="medicationSelect" 
+                            name="Medication_Name" 
+                            required 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 
+                                   rounded-lg focus:ring-2 focus:ring-green-500 
+                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                         <option value="">Loading medications...</option>
                     </select>
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date *</label>
-                    <input type="date" id="systemDate" name="System_Date" required 
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    <label for="systemDate" 
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Date *
+                    </label>
+                    <input type="date" 
+                           id="systemDate" 
+                           name="System_Date" 
+                           required 
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 
+                                  rounded-lg focus:ring-2 focus:ring-green-500 
+                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remarks *</label>
-                    <input type="text" id="remarks" name="Remarks" required 
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                        placeholder="Enter medication remarks">
+                    <label for="remarks" 
+                           class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Remarks
+                    </label>
+                    <input type="text" 
+                           id="remarks" 
+                           name="Remarks" 
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 
+                                  rounded-lg focus:ring-2 focus:ring-green-500 
+                                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                           placeholder="Enter medication remarks">
                 </div>
                 
                 <div class="col-span-full flex gap-3">
-                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                    <button type="submit" 
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white 
+                                   font-semibold py-2 px-4 rounded-lg transition">
                         💾 Save Medication
                     </button>
-                    <button type="button" id="medReset" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                    <button type="button" 
+                            id="medReset" 
+                            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white 
+                                   font-semibold py-2 px-4 rounded-lg transition">
                         🔄 Reset Form
                     </button>
                 </div>
             </form>
         </div>
 
-        <!-- Recent Medications Table -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <h3 class="text-xl font-bold text-gray-800 dark:text-white">Recent Medications</h3>
@@ -125,6 +160,7 @@
                 <table class="w-full">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Patient ID Card</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Patient</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Medication</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase">Date</th>
@@ -133,14 +169,13 @@
                         </tr>
                     </thead>
                     <tbody id="medicationsTableBody" class="divide-y divide-gray-200 dark:divide-gray-700">
-                        <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Loading medications...</td></tr>
+                        <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">Loading medications...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Settings Modal -->
     <div id="settingsModal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full p-6">
             <div class="flex justify-between items-center mb-6">
@@ -176,8 +211,7 @@
         </div>
     </div>
 
-    <!-- JavaScript Files - LOAD IN ORDER -->
-    <script src="js/common.js"></script>
-    <script src="js/medication.js"></script>
+    <script src="js/common.js?v=8.3"></script>
+    <script src="js/medication.js?v=2.1"></script>
 </body>
 </html>

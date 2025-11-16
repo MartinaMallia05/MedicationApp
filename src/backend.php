@@ -384,7 +384,7 @@ switch ($action) {
         
         $q = "SELECT 
                 m.Medication_Rec_Ref, m.System_Date, m.Remarks, m.Medication_Name,
-                p.Patient_ID, p.Patient_Name, p.Patient_Surname, p.Country_Rec_Ref, p.Town_Rec_Ref, p.Gender_Rec_Ref,
+                p.Patient_ID, p.Patient_Number, p.Patient_Name, p.Patient_Surname, p.Country_Rec_Ref, p.Town_Rec_Ref, p.Gender_Rec_Ref,
                 c.Country, t.Town, g.Gender
             FROM TBL_Medication m
             INNER JOIN TBL_Patient p ON m.Patient_ID = p.Patient_ID
@@ -409,7 +409,12 @@ switch ($action) {
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0)
             respond(['success' => false, 'message' => 'Invalid medication ID']);
-        $stmt = $conn->prepare("SELECT Medication_Rec_Ref, Patient_ID, Medication_Name, System_Date, Remarks FROM TBL_Medication WHERE Medication_Rec_Ref=? LIMIT 1");
+        $stmt = $conn->prepare("SELECT 
+                m.Medication_Rec_Ref, m.Patient_ID, m.Medication_Name, m.System_Date, m.Remarks,
+                p.Patient_Number, p.Patient_Name, p.Patient_Surname
+            FROM TBL_Medication m
+            INNER JOIN TBL_Patient p ON m.Patient_ID = p.Patient_ID
+            WHERE m.Medication_Rec_Ref=? LIMIT 1");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         $res = $stmt->get_result();
