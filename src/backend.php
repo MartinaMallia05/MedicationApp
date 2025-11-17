@@ -6,10 +6,55 @@ ini_set('log_errors', 1);
 
 session_start();
 ob_start();
+
+// ==================== COMPREHENSIVE SECURITY HEADERS ====================
 header('Content-Type: application/json');
-// For production avoid allowing external CDNs in CSP (e.g. cdn.tailwindcss.com).
-// Keep CSP restricted to self; if you add Tailwind, install it locally (PostCSS/CLI) and serve the CSS from your assets.
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline':");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
+header("X-Content-Type-Options: nosniff");
+header("X-Frame-Options: DENY");
+header("X-XSS-Protection: 1; mode=block");
+header("Referrer-Policy: strict-origin-when-cross-origin");
+header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
+
+// ==================== SECURITY FUNCTIONS ====================
+function sanitizeInput($input, $type = 'string') {
+    if (empty($input)) return '';
+    
+    switch ($type) {
+        case 'email':
+            $clean = filter_var(trim($input), FILTER_SANITIZE_EMAIL);
+            return filter_var($clean, FILTER_VALIDATE_EMAIL) ? $clean : '';
+        case 'int':
+            return filter_var($input, FILTER_VALIDATE_INT, FILTER_NULL_ON_FAILURE) ?? 0;
+        case 'string':
+        default:
+            $clean = filter_var(trim($input), FILTER_SANITIZE_STRING);
+            return htmlspecialchars($clean, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+function validateCSRFToken() {
+    if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token'])) {
+        return false;
+    }
+    return hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
+}
+
+function rateLimitCheck($action, $maxAttempts = 5, $timeWindow = 300) {
+    $key = 'rate_limit_' . $action . '_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    
+    if (!isset($_SESSION[$key])) {
+        $_SESSION[$key] = ['count' => 0, 'reset_time' => time() + $timeWindow];
+    }
+    
+    if (time() > $_SESSION[$key]['reset_time']) {
+        $_SESSION[$key] = ['count' => 0, 'reset_time' => time() + $timeWindow];
+    }
+    
+    $_SESSION[$key]['count']++;
+    
+    return $_SESSION[$key]['count'] <= $maxAttempts;
+}
 
 // ==================== DATABASE CONNECTION ====================
 $host = 'localhost';
@@ -36,6 +81,11 @@ function respond($data, $code = 200)
 
 // ==================== GET ACTION ====================
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
+
+// Handle empty action
+if (empty($action)) {
+    respond(['success' => false, 'message' => 'No action specified'], 400);
+}
 
 // ==================== SESSION-BASED REQUEST DEDUPLICATION ====================
 if (!isset($_SESSION['last_request'])) {
@@ -71,17 +121,27 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
 
     // ==================== REGISTER ====================
     if ($action === 'register') {
-        $username = trim($_POST['username'] ?? '');
+        // Rate limiting for registration
+        if (!rateLimitCheck('register', 3, 600)) {
+            respond(['success' => false, 'message' => 'Too many registration attempts. Please try again in 10 minutes.'], 429);
+        }
+        
+        $username = sanitizeInput($_POST['username'] ?? '', 'string');
         $password = $_POST['password'] ?? '';
         $confirm = $_POST['confirm_password'] ?? '';
-        $role = trim($_POST['role'] ?? '');
+        $role = sanitizeInput($_POST['role'] ?? '', 'string');
 
         if (!$username || !$password || !$confirm || !$role) {
             respond(['success' => false, 'message' => 'All fields are required'], 400);
         }
 
+        // Enhanced validation
         if (strlen($username) < 3 || strlen($username) > 50) {
             respond(['success' => false, 'message' => 'Username must be 3-50 characters'], 400);
+        }
+        
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $username)) {
+            respond(['success' => false, 'message' => 'Username can only contain letters, numbers, and underscores'], 400);
         }
 
         if (strlen($password) < 6) {
@@ -92,16 +152,16 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             respond(['success' => false, 'message' => 'Passwords do not match'], 400);
         }
 
-        // Validate role
+        // Validate role with whitelist
         $validRoles = ['doctor', 'nurse', 'admin'];
         if (!in_array($role, $validRoles)) {
             respond(['success' => false, 'message' => 'Invalid role selected'], 400);
         }
 
-        // Use a single query with error handling for better atomicity
+        // Use standard password hashing for compatibility
         $hash = password_hash($password, PASSWORD_DEFAULT);
         
-        // First check if user exists (additional safety layer)
+        // Check if user exists with prepared statement
         $checkStmt = $conn->prepare("SELECT COUNT(*) as count FROM TBL_User WHERE Username = ?");
         $checkStmt->bind_param("s", $username);
         $checkStmt->execute();
@@ -140,32 +200,56 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
 
     // ==================== LOGIN ====================
     if ($action === 'login') {
-        $username = trim($_POST['username'] ?? '');
+        // Rate limiting for login attempts
+        if (!rateLimitCheck('login', 5, 300)) {
+            respond(['success' => false, 'message' => 'Too many login attempts. Please try again in 5 minutes.'], 429);
+        }
+        
+        $username = sanitizeInput($_POST['username'] ?? '', 'string');
         $password = $_POST['password'] ?? '';
 
-        if (!$username || !$password)
+        if (!$username || !$password) {
             respond(['success' => false, 'message' => 'Username and password required'], 400);
+        }
+
+        // Input validation
+        if (strlen($username) < 3 || strlen($username) > 50) {
+            respond(['success' => false, 'message' => 'Invalid username format'], 400);
+        }
 
         $stmt = $conn->prepare("SELECT u.User_ID, u.Password_Hash, u.Is_Active, u.Role FROM TBL_User u WHERE u.Username=? LIMIT 1");
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $result = $stmt->get_result();
-        if ($result->num_rows === 0)
+        
+        if ($result->num_rows === 0) {
             respond(['success' => false, 'message' => 'Invalid username or password'], 401);
+        }
 
         $user = $result->fetch_assoc();
-        if (!$user['Is_Active'])
+        if (!$user['Is_Active']) {
             respond(['success' => false, 'message' => 'User inactive'], 401);
+        }
 
         if (password_verify($password, $user['Password_Hash'])) {
+            // Regenerate session ID for security
+            session_regenerate_id(true);
+            
             $_SESSION['user_id'] = $user['User_ID'];
-            $_SESSION['username'] = $username;
+            $_SESSION['username'] = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
             $_SESSION['role'] = strtolower($user['Role'] ?? 'user');
             
-            // Generate CSRF token
+            // Generate secure CSRF token
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             
-            $conn->query("UPDATE TBL_User SET Last_Login=NOW() WHERE User_ID=" . $user['User_ID']);
+            // Update last login with prepared statement
+            $updateStmt = $conn->prepare("UPDATE TBL_User SET Last_Login=NOW() WHERE User_ID=?");
+            $updateStmt->bind_param("i", $user['User_ID']);
+            $updateStmt->execute();
+            
+            // Reset rate limit on successful login
+            unset($_SESSION['rate_limit_login_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown')]);
+            
             respond(['success' => true, 'message' => 'Login successful']);
         } else {
             respond(['success' => false, 'message' => 'Invalid username or password'], 401);
@@ -267,8 +351,10 @@ if (!isset($_SESSION['user_id'])) {
 // ==================== CSRF CHECK FOR POST ====================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
-    if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
-        respond(['success' => false, 'message' => 'Invalid CSRF token'], 403);
+    $session_token = $_SESSION['csrf_token'] ?? '';
+    
+    if (!hash_equals($session_token, $token)) {
+        respond(['success' => false, 'message' => 'Invalid CSRF token. Please refresh the page and try again.'], 403);
     }
 }
 
@@ -359,7 +445,13 @@ switch ($action) {
         $gender = intval($_POST['Gender_Rec_Ref'] ?? 0);
 
         if (!$name || !$surname || !$country || !$town || !$gender) {
-            respond(['success' => false, 'message' => 'Required fields missing'], 400);
+            $missing = [];
+            if (!$name) $missing[] = 'Patient_Name';
+            if (!$surname) $missing[] = 'Patient_Surname'; 
+            if (!$country) $missing[] = 'Country_Rec_Ref';
+            if (!$town) $missing[] = 'Town_Rec_Ref';
+            if (!$gender) $missing[] = 'Gender_Rec_Ref';
+            respond(['success' => false, 'message' => 'Required fields missing: ' . implode(', ', $missing)], 400);
         }
 
         // Validate Patient_Number format: 7 digits + 1 letter
@@ -394,7 +486,14 @@ switch ($action) {
         $gender = intval($_POST['Gender_Rec_Ref'] ?? 0);
 
         if ($id <= 0 || !$name || !$surname || !$country || !$town || !$gender) {
-            respond(['success' => false, 'message' => 'Invalid data'], 400);
+            $missing = [];
+            if ($id <= 0) $missing[] = 'Patient_ID';
+            if (!$name) $missing[] = 'Patient_Name';
+            if (!$surname) $missing[] = 'Patient_Surname'; 
+            if (!$country) $missing[] = 'Country_Rec_Ref';
+            if (!$town) $missing[] = 'Town_Rec_Ref';
+            if (!$gender) $missing[] = 'Gender_Rec_Ref';
+            respond(['success' => false, 'message' => 'Invalid data: ' . implode(', ', $missing) . ' missing or invalid'], 400);
         }
 
         // Validate Patient_Number format: 7 digits + 1 letter
@@ -543,6 +642,60 @@ switch ($action) {
         } else {
             respond(['success' => false, 'message' => 'Failed to delete medication: ' . $stmt->error], 500);
         }
+
+    // ==================== AJAX AUTOCOMPLETE ====================
+    case 'autocomplete_medications':
+        error_log("Autocomplete medications called with term: " . ($_GET['term'] ?? 'none'));
+        
+        if (!isset($_GET['term']) || strlen(trim($_GET['term'])) < 2) {
+            respond([]);
+        }
+        
+        // Input filtering for XSS protection
+        $term = filter_var(trim($_GET['term']), FILTER_SANITIZE_STRING);
+        $term = htmlspecialchars($term, ENT_QUOTES, 'UTF-8');
+        
+        error_log("Filtered term: " . $term);
+        
+        $stmt = $conn->prepare("SELECT DISTINCT Medication_Name FROM TBL_Medication WHERE Medication_Name LIKE ? ORDER BY Medication_Name LIMIT 10");
+        $searchTerm = '%' . $term . '%';
+        $stmt->bind_param("s", $searchTerm);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $medications = [];
+        while ($row = $result->fetch_assoc()) {
+            // Output escaping for additional XSS protection
+            $medications[] = htmlspecialchars($row['Medication_Name'], ENT_QUOTES, 'UTF-8');
+        }
+        
+        error_log("Found medications: " . json_encode($medications));
+        respond($medications);
+        break;
+
+    case 'autocomplete_doctors':
+        if (!isset($_GET['term']) || strlen(trim($_GET['term'])) < 2) {
+            respond([]);
+        }
+        
+        // Input filtering for XSS protection
+        $term = filter_var(trim($_GET['term']), FILTER_SANITIZE_STRING);
+        $term = htmlspecialchars($term, ENT_QUOTES, 'UTF-8');
+        
+        $stmt = $conn->prepare("SELECT DISTINCT Prescribed_by FROM record WHERE Prescribed_by LIKE ? AND Prescribed_by IS NOT NULL ORDER BY Prescribed_by LIMIT 10");
+        $searchTerm = '%' . $term . '%';
+        $stmt->bind_param("s", $searchTerm);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $doctors = [];
+        while ($row = $result->fetch_assoc()) {
+            // Output escaping for additional XSS protection
+            $doctors[] = htmlspecialchars($row['Prescribed_by'], ENT_QUOTES, 'UTF-8');
+        }
+        
+        respond($doctors);
+        break;
 
     default:
         respond(['success' => false, 'message' => 'Invalid action'], 400);

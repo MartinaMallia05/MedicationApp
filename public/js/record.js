@@ -1,4 +1,4 @@
-// js/record.js - All Records functionality (combined patients with medications)
+// js/record.js v5.0 - All Records functionality with Ajax autocomplete
 let allRecords = [];
 let filteredRecords = [];
 let currentPage = 1;
@@ -87,12 +87,6 @@ function renderRecordsTable() {
             </td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.formatDate(record.System_Date)}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Remarks) || 'N/A'}</td>
-            <td class="px-4 py-3 text-sm">
-                <div class="flex gap-1 flex-wrap">
-                    <button onclick="editRecord(${record.Medication_Rec_Ref})" class="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600">✏️ Edit</button>
-                    <button onclick="deleteRecord(${record.Medication_Rec_Ref})" class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600">🗑️ Delete</button>
-                </div>
-            </td>
         `;
         tbody.appendChild(row);
     });
@@ -143,14 +137,15 @@ window.nextPage = function() {
 };
 
 // ==================== SEARCH ====================
-function setupSearch() {
-    const searchInput = document.getElementById('searchInput');
-    if (!searchInput) return;
-
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
+function performSearch() {
+    const mainQuery = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+    const medicationQuery = (document.getElementById('medicationAutocomplete').value || '').toLowerCase().trim();
+    
+    filteredRecords = allRecords.filter(record => {
+        let matches = true;
         
-        filteredRecords = allRecords.filter(record => {
+        // Check main search query (searches all fields)
+        if (mainQuery) {
             const searchText = `
                 ${record.Patient_Number || ''}
                 ${record.Patient_Name} 
@@ -160,43 +155,37 @@ function setupSearch() {
                 ${record.Country}
             `.toLowerCase();
             
-            return searchText.includes(query);
-        });
-
-        currentPage = 1;
-        renderRecordsTable();
-        updatePagination();
+            matches = matches && searchText.includes(mainQuery);
+        }
+        
+        // Check medication-specific query
+        if (medicationQuery) {
+            const medicationName = (record.Medication_Name || '').toLowerCase();
+            matches = matches && medicationName.includes(medicationQuery);
+        }
+        
+        return matches;
     });
+
+    currentPage = 1;
+    renderRecordsTable();
+    updatePagination();
+    
+    // Show/hide clear button if any filter is active
+    const clearBtn = document.getElementById('clearFilter');
+    if (clearBtn) {
+        clearBtn.style.display = (mainQuery || medicationQuery) ? 'block' : 'none';
+    }
+    
+    console.log(`Filtered records: ${filteredRecords.length}/${allRecords.length}`);
 }
 
-// ==================== EDIT RECORD ====================
-window.editRecord = async function(id) {
-    window.commonUtils.showNotification('Edit functionality coming soon', 'info');
-};
+function setupSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (!searchInput) return;
 
-// ==================== DELETE RECORD ====================
-window.deleteRecord = async function(id) {
-    if (!confirm('Delete this medication record?')) return;
-    
-    try {
-        const formData = new FormData();
-        formData.append('action', 'delete_medication');
-        formData.append('Medication_Rec_Ref', id);
-        formData.append('csrf_token', window.commonUtils.getCsrfToken());
-        
-        const res = await fetch('backend.php', { method: 'POST', body: formData });
-        const data = await res.json();
-        
-        if (data.success) {
-            window.commonUtils.showNotification(data.message, 'success');
-            await loadRecords();
-        } else {
-            window.commonUtils.showNotification(data.message, 'error');
-        }
-    } catch (err) {
-        window.commonUtils.showNotification('Delete failed: ' + err.message, 'error');
-    }
-};
+    searchInput.addEventListener('input', performSearch);
+}
 
 // ==================== INIT RECORDS PAGE ====================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -204,6 +193,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     itemsPerPage = parseInt(window.commonUtils.getUserSetting('table_limit', '10'));
     
     setupSearch();
+    
+    // Initialize Ajax autocomplete for medication search (Assessment requirement)
+    if (window.createAutocomplete) {
+        const medicationInput = document.getElementById('medicationAutocomplete');
+        
+        // Add real-time filtering as user types in medication field
+        if (medicationInput) {
+            medicationInput.addEventListener('input', performSearch);
+        }
+        
+        window.createAutocomplete('#medicationAutocomplete', 'backend.php?action=autocomplete_medications', {
+            minLength: 2,
+            onSelect: function(selectedMedication) {
+                console.log('Ajax autocomplete selected:', selectedMedication);
+                
+                // Set the value and trigger search
+                document.getElementById('medicationAutocomplete').value = selectedMedication;
+                performSearch();
+            }
+        });
+        
+        // Add clear filter functionality
+        const clearFilterBtn = document.getElementById('clearFilter');
+        if (clearFilterBtn) {
+            clearFilterBtn.addEventListener('click', function() {
+                // Reset both search fields
+                document.getElementById('medicationAutocomplete').value = '';
+                document.getElementById('searchInput').value = '';
+                
+                // Trigger unified search (which will show all records when both fields are empty)
+                performSearch();
+                
+                console.log('Filters cleared - showing all records:', allRecords.length);
+            });
+        }
+    }
     
     // Setup pagination buttons
     document.getElementById('prevPageBtn')?.addEventListener('click', window.prevPage);
