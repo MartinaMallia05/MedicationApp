@@ -7,7 +7,7 @@ ini_set('log_errors', 1);
 session_start();
 ob_start();
 
-// ==================== COMPREHENSIVE SECURITY HEADERS ====================
+// security headers
 header('Content-Type: application/json');
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
 header("X-Content-Type-Options: nosniff");
@@ -16,7 +16,7 @@ header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
 
-// ==================== SECURITY FUNCTIONS ====================
+// Security functions
 function sanitizeInput($input, $type = 'string') {
     if (empty($input)) return '';
     
@@ -56,7 +56,7 @@ function rateLimitCheck($action, $maxAttempts = 5, $timeWindow = 300) {
     return $_SESSION[$key]['count'] <= $maxAttempts;
 }
 
-// ==================== DATABASE CONNECTION ====================
+// Database connection
 $host = 'localhost';
 $user = 'root';
 $pass = '';
@@ -70,7 +70,7 @@ if ($conn->connect_error) {
     exit;
 }
 
-// ==================== HELPER FUNCTION ====================
+// Helpers
 function respond($data, $code = 200)
 {
     http_response_code($code);
@@ -79,7 +79,7 @@ function respond($data, $code = 200)
     exit;
 }
 
-// ==================== GET ACTION ====================
+// Get action
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
 // Handle empty action
@@ -87,12 +87,12 @@ if (empty($action)) {
     respond(['success' => false, 'message' => 'No action specified'], 400);
 }
 
-// ==================== SESSION-BASED REQUEST DEDUPLICATION ====================
+// Session based write lock for deduplication
 if (!isset($_SESSION['last_request'])) {
     $_SESSION['last_request'] = [];
 }
 
-// Only apply deduplication to registration, not login
+// Only apply deduplication to registration
 if ($action === 'register') {
     // Create request fingerprint for registration only
     $request_fingerprint = $action . '_' . md5($username ?? '');
@@ -103,12 +103,9 @@ if ($action === 'register') {
         ($current_time - $_SESSION['last_request'][$request_fingerprint]) < 3) {
         respond(['success' => false, 'message' => 'Please wait before trying again.'], 429);
     }
-    
-    // Store current request only after successful validation
-    // This prevents blocking corrections to invalid forms
 }
 
-// Clean up old requests (older than 10 seconds)
+// Clean up old requests older than 10 seconds from session
 $current_time = time();
 foreach ($_SESSION['last_request'] as $fp => $time) {
     if (($current_time - $time) > 10) {
@@ -116,12 +113,12 @@ foreach ($_SESSION['last_request'] as $fp => $time) {
     }
 }
 
-// ==================== PUBLIC ACTIONS ====================
+// Public actions
 if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password'])) {
 
-    // ==================== REGISTER ====================
+    // Register
     if ($action === 'register') {
-        // Rate limiting for registration
+        // Rate limiting for registration attempts
         if (!rateLimitCheck('register', 3, 600)) {
             respond(['success' => false, 'message' => 'Too many registration attempts. Please try again in 10 minutes.'], 429);
         }
@@ -152,7 +149,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             respond(['success' => false, 'message' => 'Passwords do not match'], 400);
         }
 
-        // Validate role with whitelist
+        // Validate role
         $validRoles = ['doctor', 'nurse', 'admin'];
         if (!in_array($role, $validRoles)) {
             respond(['success' => false, 'message' => 'Invalid role selected'], 400);
@@ -161,7 +158,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
         // Use standard password hashing for compatibility
         $hash = password_hash($password, PASSWORD_DEFAULT);
         
-        // Check if user exists with prepared statement
+        // Check for existing username
         $checkStmt = $conn->prepare("SELECT COUNT(*) as count FROM TBL_User WHERE Username = ?");
         $checkStmt->bind_param("s", $username);
         $checkStmt->execute();
@@ -173,14 +170,14 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             respond(['success' => false, 'message' => 'Username already exists'], 400);
         }
         
-        // Try to insert directly - let MySQL unique constraint handle duplicates
+        // Unique constraint handle duplicates
         $stmt = $conn->prepare("INSERT INTO TBL_User (Username, Password_Hash, Role) VALUES (?,?,?)");
         $stmt->bind_param("sss", $username, $hash, $role);
         
         if ($stmt->execute()) {
             $stmt->close();
             
-            // Store successful registration to prevent immediate duplicates
+            // Successful registration to prevent duplicates
             $request_fingerprint = 'register_' . md5($username);
             $_SESSION['last_request'][$request_fingerprint] = time();
             
@@ -189,7 +186,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             $error = $stmt->error;
             $stmt->close();
             
-            // Check if it's a duplicate entry error
+            // Check if a duplicate entry error
             if (strpos($error, 'Duplicate entry') !== false) {
                 respond(['success' => false, 'message' => 'Username already exists'], 400);
             } else {
@@ -198,7 +195,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
         }
     }
 
-    // ==================== LOGIN ====================
+    // Login
     if ($action === 'login') {
         // Rate limiting for login attempts
         if (!rateLimitCheck('login', 5, 300)) {
@@ -256,7 +253,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
         }
     }
 
-    // ==================== FORGOT PASSWORD ====================
+    // Forget Password
     if ($action === 'forgot_password') {
         $username = trim($_POST['username'] ?? '');
 
@@ -264,6 +261,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             respond(['success' => false, 'message' => 'Username is required'], 400);
         }
 
+        // Check if user exists with prepared statement
         $stmt = $conn->prepare("SELECT User_ID, Reset_Token, Reset_Token_Expiry FROM TBL_User WHERE Username=? AND Is_Active=1 LIMIT 1");
         $stmt->bind_param("s", $username);
         $stmt->execute();
@@ -284,9 +282,11 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             ]);
         }
 
+        // Generate new token
         $token = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
         $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
+        // Store token with prepared statement
         $stmt = $conn->prepare("UPDATE TBL_User SET Reset_Token=?, Reset_Token_Expiry=? WHERE User_ID=?");
         $stmt->bind_param("ssi", $token, $expiry, $user['User_ID']);
 
@@ -301,13 +301,14 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
         }
     }
 
-    // ==================== RESET PASSWORD ====================
+    // Reset Password
     if ($action === 'reset_password') {
         $username = trim($_POST['username'] ?? '');
         $token = trim($_POST['token'] ?? '');
         $newPassword = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
 
+        // Input validation
         if (!$username || !$token || !$newPassword || !$confirmPassword) {
             respond(['success' => false, 'message' => 'All fields are required'], 400);
         }
@@ -320,6 +321,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             respond(['success' => false, 'message' => 'Passwords do not match'], 400);
         }
 
+        // Verify token with prepared statement
         $stmt = $conn->prepare("SELECT User_ID FROM TBL_User WHERE Username=? AND Reset_Token=? AND Reset_Token_Expiry > NOW() AND Is_Active=1 LIMIT 1");
         $stmt->bind_param("ss", $username, $token);
         $stmt->execute();
@@ -331,6 +333,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
 
         $user = $result->fetch_assoc();
 
+        // Update password with prepared statement
         $hash = password_hash($newPassword, PASSWORD_DEFAULT);
         $stmt = $conn->prepare("UPDATE TBL_User SET Password_Hash=?, Reset_Token=NULL, Reset_Token_Expiry=NULL WHERE User_ID=?");
         $stmt->bind_param("si", $hash, $user['User_ID']);
@@ -343,12 +346,12 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
     }
 }
 
-// ==================== CHECK SESSION ====================
+// Check if user is logged in for protected actions
 if (!isset($_SESSION['user_id'])) {
     respond(['success' => false, 'message' => 'Unauthorized. Please log in.'], 401);
 }
 
-// ==================== CSRF CHECK FOR POST ====================
+// CSRF check for POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
     $session_token = $_SESSION['csrf_token'] ?? '';
@@ -358,14 +361,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ==================== CRUD / DROPDOWNS ====================
+// CRUD and Dropdowns
 switch ($action) {
 
     case 'logout':
         session_destroy();
         respond(['success' => true, 'message' => 'Logged out']);
 
-    // ==================== GET DROPDOWNS ====================
+    // Get Dropdowns
     case 'get_dropdowns':
         $countries = $genders = $patients = [];
         $res = $conn->query("SELECT Country_Rec_Ref, Country FROM TBL_Country WHERE In_Use=1 ORDER BY Country");
@@ -382,7 +385,7 @@ switch ($action) {
 
         respond(['success' => true, 'countries' => $countries, 'genders' => $genders, 'patients' => $patients]);
 
-    // ==================== GET TOWNS ====================
+    // Get Towns
     case 'get_towns':
         $countryId = intval($_GET['countryId'] ?? 0);
         if ($countryId <= 0)
@@ -396,7 +399,7 @@ switch ($action) {
             $towns[] = $r;
         respond($towns);
 
-    // ==================== GET PATIENTS ====================
+    // Get Patients
     case 'get_patients':
         $q = "SELECT 
                 p.Patient_ID, p.Patient_Number, p.Patient_Name, p.Patient_Surname, p.DOB, p.Add_1, p.Add_2, p.Add_3,
@@ -418,7 +421,7 @@ switch ($action) {
             $patients[] = $r;
         respond(['success' => true, 'patients' => $patients]);
 
-    // ==================== GET SINGLE PATIENT ====================
+    // Get Single Patient
     case 'get_patient':
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0)
@@ -431,7 +434,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Patient not found']);
         respond(['success' => true, 'patient' => $res->fetch_assoc()]);
 
-    // ==================== ADD PATIENT ====================
+    // Add Patient
     case 'add_patient':
         $patientNumber = trim($_POST['Patient_Number'] ?? '');
         $name = trim($_POST['Patient_Name'] ?? '');
@@ -454,9 +457,9 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Required fields missing: ' . implode(', ', $missing)], 400);
         }
 
-        // Validate Patient_Number format: 7 digits + 1 letter
+        // Validate Patient ID Card format: 7 digits + 1 letter
         if ($patientNumber && !preg_match('/^[0-9]{7}[A-Z]$/', $patientNumber)) {
-            respond(['success' => false, 'message' => 'Patient Number must be 7 digits followed by a letter (e.g., 1234567A)'], 400);
+            respond(['success' => false, 'message' => 'Patient ID Card must be 7 digits followed by a letter (e.g., 1234567A)'], 400);
         }
 
         // Get current user ID for audit trail
@@ -471,7 +474,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to add patient: ' . $stmt->error], 500);
         }
 
-    // ==================== UPDATE PATIENT ====================
+    // Update Patient
     case 'update_patient':
         $id = intval($_POST['Patient_ID'] ?? 0);
         $patientNumber = trim($_POST['Patient_Number'] ?? '');
@@ -496,9 +499,9 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Invalid data: ' . implode(', ', $missing) . ' missing or invalid'], 400);
         }
 
-        // Validate Patient_Number format: 7 digits + 1 letter
+        // Validate Patient ID Card format: 7 digits + 1 letter
         if ($patientNumber && !preg_match('/^[0-9]{7}[A-Z]$/', $patientNumber)) {
-            respond(['success' => false, 'message' => 'Patient Number must be 7 digits followed by a letter (e.g., 1234567A)'], 400);
+            respond(['success' => false, 'message' => 'Patient ID Card must be 7 digits followed by a letter (e.g., 1234567A)'], 400);
         }
 
         $stmt = $conn->prepare("UPDATE TBL_Patient SET Patient_Number=?, Patient_Name=?, Patient_Surname=?, DOB=?, Add_1=?, Add_2=?, Add_3=?, Town_Rec_Ref=?, Country_Rec_Ref=?, Gender_Rec_Ref=? WHERE Patient_ID=?");
@@ -510,7 +513,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to update patient: ' . $stmt->error], 500);
         }
 
-    // ==================== DELETE PATIENT ====================
+    // Delete Patient
     case 'delete_patient':
         $id = intval($_POST['Patient_ID'] ?? 0);
         if ($id <= 0)
@@ -529,7 +532,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to delete patient: ' . $stmt->error], 500);
         }
 
-    // ==================== GET MEDICATIONS ====================
+    // Get Medications
     case 'get_medications':
         // Check if table exists first
         $tableCheck = $conn->query("SHOW TABLES LIKE 'TBL_Medication'");
@@ -551,7 +554,7 @@ switch ($action) {
         
         $res = $conn->query($q);
         if (!$res) {
-            // If query fails, return empty array instead of error
+            // If query fails return empty array instead of error
             respond(['success' => true, 'medications' => []]);
         }
         
@@ -560,7 +563,7 @@ switch ($action) {
             $medications[] = $r;
         respond(['success' => true, 'medications' => $medications]);
 
-    // ==================== GET SINGLE MEDICATION ====================
+    // Get Single Medication
     case 'get_medication':
         $id = intval($_GET['id'] ?? 0);
         if ($id <= 0)
@@ -578,9 +581,9 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Medication not found']);
         respond(['success' => true, 'medication' => $res->fetch_assoc()]);
 
-    // ==================== ADD MEDICATION ====================
+    // Add Medication
     case 'add_medication':
-        // Check user role - only doctors and nurses can prescribe medications
+        // Check user role (only doctors and nurses can prescribe medications)
         $userRole = $_SESSION['role'] ?? '';
         if (!in_array($userRole, ['doctor', 'nurse'])) {
             respond(['success' => false, 'message' => 'Access denied. Only doctors and nurses can prescribe medications. Current role: ' . $userRole], 403);
@@ -595,7 +598,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'All fields required'], 400);
         }
         
-        // Get current user ID for audit trail (who prescribed this medication)
+        // Get current user ID for audit trail for who prescribed this medication
         $currentUserId = $_SESSION['user_id'] ?? 1; // Fallback to user 1 if session issue
         
         $stmt = $conn->prepare("INSERT INTO TBL_Medication (Patient_ID, Medication_Name, System_Date, Remarks, Prescribed_By_User_ID) VALUES (?,?,?,?,?)");
@@ -607,7 +610,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to add medication: ' . $stmt->error], 500);
         }
 
-    // ==================== UPDATE MEDICATION ====================
+    // Update Medication
     case 'update_medication':
         $id = intval($_POST['Medication_Rec_Ref'] ?? 0);
         $patientId = intval($_POST['Patient_ID'] ?? 0);
@@ -628,7 +631,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to update medication: ' . $stmt->error], 500);
         }
 
-    // ==================== DELETE MEDICATION ====================
+    // Delete Medication
     case 'delete_medication':
         $id = intval($_POST['Medication_Rec_Ref'] ?? 0);
         if ($id <= 0)
@@ -643,7 +646,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Failed to delete medication: ' . $stmt->error], 500);
         }
 
-    // ==================== AJAX AUTOCOMPLETE ====================
+    // Autocomplete for Medications
     case 'autocomplete_medications':
         error_log("Autocomplete medications called with term: " . ($_GET['term'] ?? 'none'));
         
@@ -651,7 +654,7 @@ switch ($action) {
             respond([]);
         }
         
-        // Input filtering for XSS protection
+        // Input filtering for protection
         $term = filter_var(trim($_GET['term']), FILTER_SANITIZE_STRING);
         $term = htmlspecialchars($term, ENT_QUOTES, 'UTF-8');
         
@@ -665,7 +668,7 @@ switch ($action) {
         
         $medications = [];
         while ($row = $result->fetch_assoc()) {
-            // Output escaping for additional XSS protection
+            // Output escaping for additional protection
             $medications[] = htmlspecialchars($row['Medication_Name'], ENT_QUOTES, 'UTF-8');
         }
         
@@ -678,7 +681,7 @@ switch ($action) {
             respond([]);
         }
         
-        // Input filtering for XSS protection
+        // Input filtering for protection
         $term = filter_var(trim($_GET['term']), FILTER_SANITIZE_STRING);
         $term = htmlspecialchars($term, ENT_QUOTES, 'UTF-8');
         
@@ -690,7 +693,7 @@ switch ($action) {
         
         $doctors = [];
         while ($row = $result->fetch_assoc()) {
-            // Output escaping for additional XSS protection
+            // Output escaping for additional protection
             $doctors[] = htmlspecialchars($row['Prescribed_by'], ENT_QUOTES, 'UTF-8');
         }
         

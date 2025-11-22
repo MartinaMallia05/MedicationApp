@@ -1,7 +1,6 @@
-// js/medication.js - Medication management functionality
 let allMedications = [];
 
-// ==================== LOAD MEDICATIONS ====================
+// Load medications
 async function loadMedicationRecords() {
     const tbody = document.getElementById('medicationsTableBody');
     if (!tbody) return;
@@ -22,7 +21,7 @@ async function loadMedicationRecords() {
     }
 }
 
-// ==================== RENDER MEDICATIONS TABLE ====================
+// Load medications into table
 function renderMedicationsTable() {
     const tbody = document.getElementById('medicationsTableBody');
     if (!tbody) return;
@@ -34,13 +33,14 @@ function renderMedicationsTable() {
         return;
     }
 
-    // Get table limit from user-specific settings
+    // Get table limit from user specific settings
     const tableLimit = parseInt(window.commonUtils.getUserSetting('table_limit', '10'));
     const recentMedications = allMedications.slice(0, tableLimit);
 
     recentMedications.forEach(med => {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition';
+        // Table with the Patient ID Card, Name, Medication, Date, Prescribed By, Remarks, Actions
         row.innerHTML = `
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Patient_Number) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Patient_Surname)}, ${window.commonUtils.escapeHtml(med.Patient_Name)}</td>
@@ -54,6 +54,7 @@ function renderMedicationsTable() {
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Remarks) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm">
                 <div class="flex gap-1 flex-wrap">
+                
                     <button onclick="editMedication(${med.Medication_Rec_Ref})" class="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600">✏️ Edit</button>
                     <button onclick="deleteMedication(${med.Medication_Rec_Ref})" class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600">🗑️ Delete</button>
                 </div>
@@ -63,7 +64,7 @@ function renderMedicationsTable() {
     });
 }
 
-// ==================== SEARCHABLE PATIENT DROPDOWN ====================
+// Searchable dropdown for patients
 let allPatients = [];
 
 function setupPatientSearch() {
@@ -150,7 +151,7 @@ function displayPatientOptions(patients) {
     });
 }
 
-// ==================== SETUP MEDICATION FORM ====================
+// Setup medication edit and delete
 window.editMedication = async function(id) {
     try {
         const res = await fetch(`backend.php?action=get_medication&id=${id}`);
@@ -176,7 +177,6 @@ window.editMedication = async function(id) {
     }
 };
 
-// ==================== DELETE MEDICATION ====================
 window.deleteMedication = async function(id) {
     if (!confirm('Delete this medication record?')) return;
     
@@ -200,12 +200,12 @@ window.deleteMedication = async function(id) {
     }
 };
 
-// ==================== SETUP MEDICATION FORM ====================
+// Setup medication form
 function setupMedicationForm() {
     const form = document.getElementById('medForm');
     if (!form) return;
     
-    // Setup searchable patient dropdown
+    // Setup searchable dropdown for patient
     setupPatientSearch();
     
     const dateInput = document.getElementById('systemDate');
@@ -247,7 +247,7 @@ function setupMedicationForm() {
     });
 }
 
-// ==================== INIT MEDICATIONS PAGE ====================
+// Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async () => {
     setupMedicationForm();
     await window.commonUtils.loadDropdowns();

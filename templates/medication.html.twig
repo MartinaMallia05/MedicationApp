@@ -6,7 +6,6 @@
     <title>Medical System - Medication Management</title>
     <meta name="csrf-token" content="{{ csrfToken }}">
     <meta name="user-id" content="{{ userId }}">
-    <!-- TODO: Replace CDN with production Tailwind setup via npm/PostCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="css/style.css" rel="stylesheet">
     <script>
@@ -72,6 +71,7 @@
             <form id="medForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="hidden" id="medicationRef" name="Medication_Rec_Ref">
                 
+                <!-- Patient search with autocomplete dropdown -->
                 <div>
                     <label for="patientSearch" 
                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -84,6 +84,7 @@
                                   rounded-lg focus:ring-2 focus:ring-green-500 
                                   bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                     <input type="hidden" id="selectedPatientId" name="Patient_ID" required>
+                    <!-- Dropdown for patient search results -->
                     <div id="patientDropdown" 
                          class="absolute z-10 w-full bg-white dark:bg-gray-800 border border-gray-300 
                                 dark:border-gray-600 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto hidden">
@@ -152,6 +153,7 @@
             </form>
         </div>
 
+        <!-- Medication List Table -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <h3 class="text-xl font-bold text-gray-800 dark:text-white">📅 Recent Medications (DESC)</h3>

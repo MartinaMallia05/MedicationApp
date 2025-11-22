@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Medical System</title>
-    <!-- TODO: Replace CDN with production Tailwind setup via npm/PostCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="css/style.css" rel="stylesheet">
     <script>
@@ -21,6 +20,7 @@
                 <h2 class="text-xl text-gray-600 dark:text-gray-400">Login</h2>
             </div>
 
+            <!-- Login message -->
             <div id="loginMessage" class="hidden mb-4"></div>
 
             <form id="loginForm" class="space-y-4">
@@ -75,7 +75,7 @@
     </div>
 
     <script>
-        // js/login.js - Inline version
+        // Validates inputs and submits to backend
         document.addEventListener("DOMContentLoaded", () => {
           const loginForm = document.getElementById("loginForm");
           const loginMessage = document.getElementById("loginMessage");
@@ -87,11 +87,13 @@
             const username = document.getElementById("username").value.trim();
             const password = document.getElementById("password").value;
             
+            // Validate both fields
             if (!username || !password) {
               showMessage("Please enter both username and password", "error");
               return;
             }
             
+            // Disable buttonand show the spinner
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
             
@@ -101,6 +103,7 @@
             formData.append("password", password);
             
             try {
+              // Send login request to the backend
               const res = await fetch("backend.php", {
                 method: "POST",
                 body: formData
@@ -132,6 +135,7 @@
             }
           });
           
+          // Display any error message
           function showMessage(msg, type) {
             loginMessage.textContent = msg;
             loginMessage.className = type === "success" 

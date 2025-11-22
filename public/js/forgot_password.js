@@ -1,9 +1,10 @@
-// js/forgot_password.js
+// Forget password button handler
 document.addEventListener("DOMContentLoaded", () => {
   const forgotForm = document.getElementById("forgotPasswordForm");
   const forgotMessage = document.getElementById("forgotMessage");
   const forgotBtn = document.getElementById("forgotBtn");
 
+  // If clicked
   forgotForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -25,6 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("action", "forgot_password");
     formData.append("username", username);
 
+    // If username is valid
     try {
       const res = await fetch("backend.php", {
         method: "POST",
@@ -63,13 +65,14 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
 
+        // Copy to clipboard 
         document.getElementById("copyTokenBtn").addEventListener("click", () => {
           navigator.clipboard.writeText(data.token).then(() => {
             const btn = document.getElementById("copyTokenBtn");
-            btn.textContent = "✓ Copied!";
+            btn.textContent = "Copied!";
             btn.className = "mt-3 px-4 py-2 bg-green-600 text-white rounded-lg";
             setTimeout(() => {
-              btn.textContent = "📋 Copy Token";
+              btn.textContent = "Copy Token";
               btn.className = "mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition";
             }, 2000);
           }).catch(() => alert("Copy manually: " + data.token));
@@ -90,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Error or success message display
   function showMessage(msg, type) {
     forgotMessage.innerHTML = `<div class="rounded-lg p-4 text-sm font-medium ${
       type === 'error' 

@@ -1,4 +1,3 @@
-// js/reset_password.js
 document.addEventListener("DOMContentLoaded", () => {
   const resetForm = document.getElementById("resetPasswordForm");
   const resetMessage = document.getElementById("resetMessage");
@@ -7,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   resetForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
+    // Gather form data
     const username = document.getElementById("username").value.trim();
     const token = document.getElementById("token").value.trim();
     const newPassword = document.getElementById("new_password").value;
@@ -38,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("confirm_password", confirmPassword);
     
     try {
+      // Send reset request to server
       const res = await fetch("backend.php", {
         method: "POST",
         body: formData

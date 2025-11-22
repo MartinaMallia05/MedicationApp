@@ -1,10 +1,9 @@
-// js/record.js v5.0 - All Records functionality with Ajax autocomplete
 let allRecords = [];
 let filteredRecords = [];
 let currentPage = 1;
 let itemsPerPage = 10;
 
-// ==================== LOAD RECORDS ====================
+// Load records from backend
 async function loadRecords() {
     const tbody = document.getElementById('recordsTableBody');
     if (!tbody) return;
@@ -24,7 +23,7 @@ async function loadRecords() {
             throw new Error('Failed to load records');
         }
 
-        // Combine data: for each medication, attach patient info
+        // Combine data for each medication and attach patient info
         allRecords = (medicationsData.medications || []).map(med => ({
             ...med,
             Patient_ID: med.Patient_ID,
@@ -36,7 +35,7 @@ async function loadRecords() {
             Gender: med.Gender || 'N/A'
         }));
         
-        // Sort by System_Date in ascending order (oldest first) for consistency
+        // Sort by Date in ascending order for consistency
         allRecords.sort((a, b) => new Date(a.System_Date) - new Date(b.System_Date));
 
         filteredRecords = [...allRecords];
@@ -49,7 +48,7 @@ async function loadRecords() {
     }
 }
 
-// ==================== RENDER RECORDS TABLE ====================
+// Provide records to table
 function renderRecordsTable() {
     const tbody = document.getElementById('recordsTableBody');
     if (!tbody) return;
@@ -64,7 +63,7 @@ function renderRecordsTable() {
     // Get current table limit from user settings
     itemsPerPage = parseInt(window.commonUtils.getUserSetting('table_limit', '10'));
 
-    // Paginate
+    // Split records for current page
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     const pageRecords = filteredRecords.slice(start, end);
@@ -92,10 +91,10 @@ function renderRecordsTable() {
     });
 }
 
-// Make renderRecordsTable globally available for settings sync
+// Make records globally available for settings sync
 window.renderRecordsTable = renderRecordsTable;
 
-// ==================== PAGINATION ====================
+// Split of pages
 function updatePagination() {
     const info = document.getElementById('paginationInfo');
     const prevBtn = document.getElementById('prevPageBtn');
@@ -136,7 +135,7 @@ window.nextPage = function() {
     }
 };
 
-// ==================== SEARCH ====================
+// Search
 function performSearch() {
     const mainQuery = (document.getElementById('searchInput').value || '').toLowerCase().trim();
     const medicationQuery = (document.getElementById('medicationAutocomplete').value || '').toLowerCase().trim();
@@ -171,7 +170,7 @@ function performSearch() {
     renderRecordsTable();
     updatePagination();
     
-    // Show/hide clear button if any filter is active
+    // Clear button if any filter is active
     const clearBtn = document.getElementById('clearFilter');
     if (clearBtn) {
         clearBtn.style.display = (mainQuery || medicationQuery) ? 'block' : 'none';
@@ -187,14 +186,14 @@ function setupSearch() {
     searchInput.addEventListener('input', performSearch);
 }
 
-// ==================== INIT RECORDS PAGE ====================
+// INIT record page
 document.addEventListener('DOMContentLoaded', async () => {
-    // Get table limit from user-specific settings
+    // Get table limit from user specific settings
     itemsPerPage = parseInt(window.commonUtils.getUserSetting('table_limit', '10'));
     
     setupSearch();
     
-    // Initialize Ajax autocomplete for medication search (Assessment requirement)
+    // Autocomplete for medication names
     if (window.createAutocomplete) {
         const medicationInput = document.getElementById('medicationAutocomplete');
         
@@ -214,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
         
-        // Add clear filter functionality
+        // Add clear filter
         const clearFilterBtn = document.getElementById('clearFilter');
         if (clearFilterBtn) {
             clearFilterBtn.addEventListener('click', function() {
@@ -222,7 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('medicationAutocomplete').value = '';
                 document.getElementById('searchInput').value = '';
                 
-                // Trigger unified search (which will show all records when both fields are empty)
+                // Show all records
                 performSearch();
                 
                 console.log('Filters cleared - showing all records:', allRecords.length);
@@ -230,7 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
     
-    // Setup pagination buttons
+    // Setup page buttons
     document.getElementById('prevPageBtn')?.addEventListener('click', window.prevPage);
     document.getElementById('nextPageBtn')?.addEventListener('click', window.nextPage);
     

@@ -1,15 +1,16 @@
-// js/login.js - Updated for new path structure
 document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("loginForm");
   const loginMessage = document.getElementById("loginMessage");
   const loginBtn = document.getElementById("loginBtn");
 
+  // When login is submitted
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
     
+    // If fields are empty
     if (!username || !password) {
       showMessage("Please enter both username and password", "error");
       return;
@@ -29,12 +30,12 @@ document.addEventListener("DOMContentLoaded", () => {
         body: formData
       });
 
-      // Try to parse JSON body even on non-2xx so we can show server messages
+      // We show server messages
       let data = null;
       try {
         data = await res.json();
       } catch (e) {
-        // ignore parse errors
+        // ignore errors
       }
 
       if (!res.ok) {
@@ -58,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   
+  // Show error or success messages
   function showMessage(msg, type) {
     loginMessage.textContent = msg;
     loginMessage.className = type === "success" 

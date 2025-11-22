@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Medical System</title>
-    <!-- TODO: Replace CDN with production Tailwind setup via npm/PostCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="css/style.css" rel="stylesheet">
     <script>
@@ -23,6 +22,7 @@
 
             <div id="registerMessage" class="hidden mb-4"></div>
 
+            <!-- Form inputs -->
             <form id="registerForm" class="space-y-4">
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -86,6 +86,7 @@
                         <option value="doctor">👨‍⚕️ Doctor</option>
                         <option value="nurse">👩‍⚕️ Nurse</option>
                         <option value="admin">🔐 Admin</option>
+                        <!-- Admin do not have access to give medication -->
                     </select>
                 </div>
 
@@ -108,7 +109,7 @@
     </div>
 
     <script>
-        // Register form handler - Inline JavaScript
+        // Register form handler
         document.addEventListener("DOMContentLoaded", () => {
           const registerForm = document.getElementById("registerForm");
           const registerMessage = document.getElementById("registerMessage");
@@ -153,6 +154,7 @@
             formData.append("role", role);
             
             try {
+                // Send to backend
               const res = await fetch("backend.php", {
                 method: "POST",
                 body: formData
@@ -179,6 +181,7 @@
             }
           });
           
+          // Message of error or success
           function showMessage(msg, type) {
             registerMessage.textContent = msg;
             registerMessage.className = type === "success" 

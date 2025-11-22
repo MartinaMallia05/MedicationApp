@@ -1,4 +1,4 @@
-// Ajax Autocomplete functionality for assessment demonstration
+// Autocomplete search
 class AutocompleteField {
     constructor(inputElement, dataSource, options = {}) {
         this.input = inputElement;
@@ -18,6 +18,7 @@ class AutocompleteField {
         this.init();
     }
     
+    // Initialize the autocomplete functionality
     init() {
         this.createSuggestionsList();
         this.input.addEventListener('input', this.debounce(this.handleInput.bind(this), this.options.delay));
@@ -32,14 +33,17 @@ class AutocompleteField {
         this.input.parentNode.appendChild(this.suggestionsList);
     }
     
+    // Handle input event
     async handleInput(e) {
         const query = e.target.value.trim();
         
+        // Minimum length check
         if (query.length < this.options.minLength) {
             this.hideSuggestions();
             return;
         }
         
+        // Abort previous request if any
         if (this.currentRequest) {
             this.currentRequest.abort();
         }
@@ -70,12 +74,14 @@ class AutocompleteField {
         }
     }
     
+    // Show that it is loading
     showLoading() {
         this.suggestionsList.innerHTML = '<li class="px-3 py-2 text-gray-500">Loading...</li>';
         this.suggestionsList.classList.remove('hidden');
         this.isOpen = true;
     }
     
+    // Display reults
     displaySuggestions(suggestions) {
         this.suggestionsList.innerHTML = '';
         
@@ -104,6 +110,7 @@ class AutocompleteField {
         this.selectedIndex = -1;
     }
     
+    // Keyboard use for accessability
     handleKeydown(e) {
         if (!this.isOpen) return;
         

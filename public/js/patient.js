@@ -1,18 +1,16 @@
-// js/patient.js - Patient management functionality
-console.log('🔥 PATIENT.JS LOADED - VERSION 3.0');
 let allPatients = [];
 
 // Debug: Intercept all fetch requests to track backend calls
 const originalFetch = window.fetch;
 window.fetch = function(...args) {
-    console.log('🌐 FETCH REQUEST:', args);
+    console.log('FETCH REQUEST:', args);
     return originalFetch.apply(this, args).catch(error => {
-        console.error('🚨 FETCH ERROR:', error);
+        console.error('FETCH ERROR:', error);
         throw error;
     });
 };
 
-// ==================== LOAD PATIENTS ====================
+// Laod patients from backend
 async function loadPatients() {
     const tbody = document.getElementById('patientsTableBody');
     if (!tbody) return;
@@ -33,7 +31,7 @@ async function loadPatients() {
     }
 }
 
-// ==================== RENDER PATIENTS TABLE ====================
+// Provide patients table
 function renderPatientsTable() {
     const tbody = document.getElementById('patientsTableBody');
     if (!tbody) return;
@@ -45,7 +43,7 @@ function renderPatientsTable() {
         return;
     }
 
-    // Get table limit from user-specific settings
+    // Get table limit from user specific settings
     const tableLimit = parseInt(window.commonUtils.getUserSetting('table_limit', '10'));
     const recentPatients = allPatients.slice(0, tableLimit);
 
@@ -77,7 +75,7 @@ function renderPatientsTable() {
     });
 }
 
-// ==================== EDIT PATIENT ====================
+// Edit patient
 window.editPatient = async function(id) {
     console.log('Edit patient called with ID:', id);
     try {
@@ -110,7 +108,7 @@ window.editPatient = async function(id) {
     }
 };
 
-// ==================== DELETE PATIENT ====================
+// Delete patient
 window.deletePatient = async function(id) {
     if (!confirm('Delete this patient and all associated medications?')) return;
     
@@ -135,18 +133,18 @@ window.deletePatient = async function(id) {
     }
 };
 
-// ==================== SETUP PATIENT FORM ====================
+// Setup patient form
 function setupPatientForm() {
     const form = document.getElementById('patientForm');
     if (!form) return;
     
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log('🚨 FORM SUBMISSION TRIGGERED!');
+        console.log('FORM SUBMISSION TRIGGERED!');
         console.log('Event target:', e.target);
         console.log('Submitter:', e.submitter);
         
-        // Pre-validate required fields before sending
+        // Validate required fields before sending
         const patientId = document.getElementById('patientID').value;
         const name = document.getElementById('patientName').value.trim();
         const surname = document.getElementById('patientSurname').value.trim();
@@ -159,25 +157,25 @@ function setupPatientForm() {
         console.log('🔍 ACTION WILL BE:', patientId ? 'update_patient' : 'add_patient');
         
         if (!name || !surname || !country || !town || !gender) {
-            console.log('❌ CLIENT-SIDE VALIDATION FAILED');
+            console.log('CLIENT-SIDE VALIDATION FAILED');
             console.log('Missing:', {name, surname, country, town, gender});
             window.commonUtils.showNotification('Please fill in all required fields (Name, Surname, Country, Town, Gender)', 'error');
             return;
         }
         
-        // Additional validation for update operations
+        // Validation for update operations
         if (patientId && (isNaN(parseInt(patientId)) || parseInt(patientId) <= 0)) {
-            console.log('❌ INVALID PATIENT ID FOR UPDATE:', patientId);
+            console.log('INVALID PATIENT ID FOR UPDATE:', patientId);
             window.commonUtils.showNotification('Invalid Patient ID for update operation', 'error');
             return;
         }
         
         const formData = new FormData(e.target);
         
-        // Ensure Patient_ID is properly set for updates
+        // Ensure Patient_ID (Rec_Ref) is properly set for updates
         if (patientId) {
             formData.set('Patient_ID', patientId);
-            console.log('🆔 SET Patient_ID for update:', patientId);
+            console.log('SET Patient_ID for update:', patientId);
         }
         
         formData.append('action', patientId ? 'update_patient' : 'add_patient');
@@ -193,11 +191,11 @@ function setupPatientForm() {
         const countrySelect = document.getElementById('countrySelect');
         const townSelect = document.getElementById('townSelect'); 
         const genderSelect = document.getElementById('genderSelect');
-        console.log('🏳️ Country dropdown - value:', countrySelect?.value, 'selectedIndex:', countrySelect?.selectedIndex);
-        console.log('🏘️ Town dropdown - value:', townSelect?.value, 'selectedIndex:', townSelect?.selectedIndex);
-        console.log('👤 Gender dropdown - value:', genderSelect?.value, 'selectedIndex:', genderSelect?.selectedIndex);
+        console.log('Country dropdown - value:', countrySelect?.value, 'selectedIndex:', countrySelect?.selectedIndex);
+        console.log('Town dropdown - value:', townSelect?.value, 'selectedIndex:', townSelect?.selectedIndex);
+        console.log('Gender dropdown - value:', genderSelect?.value, 'selectedIndex:', genderSelect?.selectedIndex);
         
-        console.log('📋 All form data:');
+        console.log('All form data:');
         for (let [key, value] of formData.entries()) {
             console.log('  ', key, '=', value);
         }
@@ -231,7 +229,7 @@ function setupPatientForm() {
     });
 }
 
-// ==================== INIT PATIENTS PAGE ====================
+// Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async () => {
     setupPatientForm();
     await window.commonUtils.loadDropdowns();

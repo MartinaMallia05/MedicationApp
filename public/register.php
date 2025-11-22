@@ -1,5 +1,4 @@
 <?php
-// public/register.php - Registration page
 session_start();
 
 // Redirect if already logged in
@@ -8,7 +7,7 @@ if (isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Load Composer autoloader
+// Load composer autoloader
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\TwigConfig;

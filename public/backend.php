@@ -4,5 +4,6 @@ if (php_sapi_name() === 'cli') {
     exit;
 }
 
+// Need to include the backend script thats private
 require_once __DIR__ . '/../src/backend.php';
 exit;

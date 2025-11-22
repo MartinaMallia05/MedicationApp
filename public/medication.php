@@ -1,5 +1,4 @@
 <?php
-// public/medication.php - Medication management page
 session_start();
 
 // Check if user is logged in
@@ -8,10 +7,10 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['username'])) {
     exit;
 }
 
-// Role-based access control: Only doctors and nurses can access medication management
+// Role-based access control (Only doctors and nurses can access medication management)
 $userRole = $_SESSION['role'] ?? '';
 if (!in_array($userRole, ['doctor', 'nurse'])) {
-    // Admin users and others are completely blocked from medication page
+    // Admin users are completely blocked from medication page
     header('HTTP/1.1 403 Forbidden');
     echo '<!DOCTYPE html>
 <html>

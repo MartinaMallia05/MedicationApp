@@ -1,10 +1,7 @@
-// js/common.js - Shared utilities and functions across all pages
-// Version: 10.5 - Fixed showCookieConsent to check only user-specific consent
 
-// GLOBAL VARIABLES
 let csrfToken = '';
 
-// HELPER FUNCTIONS
+// Common code in all 3 pages
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
@@ -28,7 +25,7 @@ function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, m => map[m]);
 }
 
-// Format date to DD-MM-YYYY format
+// Date format DD-MM-YYYY 
 function formatDate(dateString) {
     if (!dateString || dateString === 'N/A') return 'N/A';
     try {
@@ -43,6 +40,7 @@ function formatDate(dateString) {
     }
 }
 
+// Notification for when changes are made / errors
 function showNotification(message, type = 'info') {
     const colors = {
         success: 'bg-green-500',
@@ -62,33 +60,32 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// API FUNCTIONS
+// Calling from the database
 async function loadDropdowns() {
     try {
         const res = await fetch('backend.php?action=get_dropdowns');
         const data = await res.json();
         if (!data.success) throw new Error(data.message || 'Failed to load dropdowns');
 
-        // Populate country dropdown
+        // Country dropdown
         const countrySelect = document.getElementById('countrySelect');
         if (countrySelect) {
             countrySelect.innerHTML = '<option value="">Select Country</option>' +
                 (data.countries || []).map(c => `<option value="${c.Country_Rec_Ref}">${escapeHtml(c.Country)}</option>`).join('');
 
-            // Add change listener for towns
             countrySelect.addEventListener('change', async (e) => {
                 await loadTowns(e.target.value);
             });
         }
 
-        // Populate gender dropdown
+        // Gender dropdown
         const genderSelect = document.getElementById('genderSelect');
         if (genderSelect) {
             genderSelect.innerHTML = '<option value="">Select Gender</option>' +
                 (data.genders || []).map(g => `<option value="${g.Gender_Rec_Ref}">${escapeHtml(g.Gender)}</option>`).join('');
         }
 
-        // Populate patient dropdown
+        // Patient dropdown
         const patientSelect = document.getElementById('patientSelect');
         if (patientSelect) {
             patientSelect.innerHTML = '<option value="">Select Patient</option>' +
@@ -128,6 +125,7 @@ async function loadTowns(countryId) {
     }
 }
 
+// API and if it fails
 async function loadMedications() {
     const medicationSelect = document.getElementById('medicationSelect');
     const loadingIndicator = document.getElementById('medLoadingIndicator');
@@ -168,10 +166,9 @@ async function loadMedications() {
     }
 }
 
-// USER-SPECIFIC SETTINGS (localStorage)
+// Making use of local storage 
 function getUserId() {
-    // ALWAYS get fresh user ID from meta tag on page load
-    // This ensures we use the currently logged-in user's ID
+    // User ID from on page load (Currenct user)
     const metaTag = document.querySelector('meta[name="user-id"]');
     if (metaTag) {
         const userId = metaTag.getAttribute('content');
@@ -183,20 +180,20 @@ function getUserId() {
         }
     }
 
-    // Fallback to previously stored user ID (for pages without meta tag)
+    // Else fallback
     const storedUserId = localStorage.getItem('user_id');
     if (storedUserId) {
         console.log('Using stored user ID:', storedUserId);
         return storedUserId;
     }
 
-    // Last resort fallback
+    // Else not found
     console.warn('No user ID found, using guest');
     return 'guest';
 }
 
 function getSettingKey(key) {
-    // Create user-specific setting key
+    // Create user specific setting/cookies based on user ID
     const currentUserId = getUserId();
     const settingKey = `settings_${currentUserId}_${key}`;
     console.log('Setting key:', settingKey);
@@ -207,10 +204,9 @@ function getUserSetting(key, defaultValue = null) {
     const storageKey = getSettingKey(key);
     const value = localStorage.getItem(storageKey);
     
-    // Special handling for guest user defaults
+    // Defaults for guest user (if cookies not accepted)
     const currentUserId = getUserId();
     if (currentUserId === 'guest' && value === null) {
-        // Set guest defaults: light mode (false) and table limit 10
         if (key === 'dark_mode') {
             console.log(`Getting ${storageKey}: null, using guest default: false`);
             return 'false';
@@ -230,17 +226,17 @@ function setUserSetting(key, value) {
     localStorage.setItem(storageKey, value);
     console.log(`Saved ${storageKey}:`, value);
 
-    // Broadcast settings change to all open tabs/pages
+    // All pages are updated
     window.dispatchEvent(new CustomEvent('settingsChanged', {
         detail: { key, value, storageKey }
     }));
 }
 
-// SETTINGS MODAL
+// Settings structure
 function setupSettingsModal() {
     const modal = document.getElementById('settingsModal');
     const settingsBtn = document.getElementById('settingsBtn');
-    // Handle both close button styles
+    // Handle close button and click on the outside 
     const closeBtn = modal?.querySelector('.close') || modal?.querySelector('#closeSettings');
 
     if (!modal || !settingsBtn || !closeBtn) {
@@ -252,7 +248,7 @@ function setupSettingsModal() {
         return;
     }
 
-    // Load current user-specific settings
+    // Load current user settings
     const darkMode = getUserSetting('dark_mode') === 'true';
     const tableLimit = getUserSetting('table_limit', '10');
 
@@ -262,10 +258,10 @@ function setupSettingsModal() {
     if (darkModeToggle) darkModeToggle.checked = darkMode;
     if (tableLimitSelect) tableLimitSelect.value = tableLimit;
 
-    // Open modal
+    // Open popup
     settingsBtn.addEventListener('click', () => modal.style.display = 'flex');
 
-    // Close modal
+    // Close popup
     closeBtn.addEventListener('click', () => modal.style.display = 'none');
     window.addEventListener('click', (e) => {
         if (e.target === modal) modal.style.display = 'none';
@@ -283,13 +279,13 @@ function setupSettingsModal() {
         setUserSetting('dark_mode', darkMode);
         setUserSetting('table_limit', tableLimit);
 
-        // Apply dark mode immediately
+        // Apply dark mode 
         document.documentElement.className = darkMode ? 'dark' : '';
 
         modal.style.display = 'none';
         showNotification('Settings saved successfully!', 'success');
 
-        // Apply settings immediately without reload
+        // Apply settings
         applySettingsImmediately();
 
         // Dispatch event to synchronize settings across pages/tabs
@@ -305,7 +301,7 @@ function setupSettingsModal() {
         console.log('[settings] Settings change event dispatched for cross-page sync');
     });
 
-    // Reset settings
+    // Reset settings and back to default
     document.getElementById('resetSettings')?.addEventListener('click', () => {
         setUserSetting('dark_mode', 'false');
         setUserSetting('table_limit', '10');
@@ -320,22 +316,22 @@ function setupSettingsModal() {
     });
 }
 
-// DARK MODE INITIALIZATION
+// Dark mode
 function initializeDarkMode() {
-    // Load user-specific dark mode setting
+    // Load dark mode setting
     const darkMode = getUserSetting('dark_mode') === 'true';
     if (darkMode) {
         document.documentElement.classList.add('dark');
     }
 }
 
-// REAL-TIME SETTINGS SYNCHRONIZATION
+// Real time updates
 function applySettingsImmediately() {
     // Apply dark mode
     const darkMode = getUserSetting('dark_mode') === 'true';
     document.documentElement.className = darkMode ? 'dark' : '';
 
-    // Re-render tables with new limits if functions exist
+    // Update of tables with new limits 
     if (typeof renderPatientsTable === 'function') {
         renderPatientsTable();
     }
@@ -348,20 +344,18 @@ function applySettingsImmediately() {
 }
 
 function setupSettingsSync() {
-    // Listen for settings changes from other tabs/pages
+    // Settings changes from other pages
     window.addEventListener('storage', (e) => {
-        // Check if it's a settings change for current user
         const currentUserId = getUserId();
         if (e.key && e.key.startsWith(`settings_${currentUserId}_`)) {
             console.log('Settings changed in another tab:', e.key, e.newValue);
             applySettingsImmediately();
 
-            // Update settings modal if open
             updateSettingsModalValues();
         }
     });
 
-    // Listen for settings changes in same tab
+    // Settings changes from current tab
     window.addEventListener('settingsChanged', (e) => {
         console.log('Settings changed in current tab:', e.detail);
         applySettingsImmediately();
@@ -369,7 +363,7 @@ function setupSettingsSync() {
 }
 
 function updateSettingsModalValues() {
-    // Update modal controls to reflect current settings
+    // Update popup controls to reflect current settings
     const darkModeToggle = document.getElementById('darkModeToggle');
     const tableLimitSelect = document.getElementById('tableLimitSelect');
 
@@ -385,13 +379,12 @@ function updateSettingsModalValues() {
     }
 }
 
-// USER-SCOPED CONSENT HELPERS
-// Generate user-specific consent storage key for per-user privacy preferences
+// Cookies consent management
 function initializeUserConsent() {
     const userConsent = localStorage.getItem(getConsentKey('cookie_consent'));
     if (userConsent === null) {
-        // New user - don't set anything, let them choose
-        console.log('[consent] new user detected - no stored consent, will show popup');
+        // New user has not made a choice yet
+        console.log('[consent] new user detected');
     }
     return userConsent;
 }
@@ -403,12 +396,12 @@ function getConsentKey(key) {
 
 function isCookieDecisionMade() {
     const userConsent = localStorage.getItem(getConsentKey('cookie_consent'));
-    // Default to 'rejected' for new users, only return true if explicitly 'accepted'
+    // Default to 'rejected' for new users only return true if 'accepted'
     return sessionStorage.getItem('cookie_decision_made') === 'true' || userConsent === 'accepted';
 }
 
 function hideSettingsForRejectedCookies() {
-    console.log('[settings] Hiding settings - cookies rejected this session');
+    console.log('[settings] Hiding settings if cookies are rejected for this session Only');
 
     // Hide settings button on all pages
     const settingsBtn = document.getElementById('settingsBtn');
@@ -417,35 +410,34 @@ function hideSettingsForRejectedCookies() {
         console.log('[settings] Settings button hidden');
     }
 
-    // Close settings modal if open, but don't hide it permanently
     const settingsModal = document.getElementById('settingsModal');
     if (settingsModal && settingsModal.style.display === 'flex') {
         settingsModal.style.display = 'none';
-        console.log('[settings] Settings modal closed');
+        console.log('[settings] Settings popup closed');
     }
 }
 
 function showSettingsForAcceptedCookies() {
-    console.log('[settings] 🔧 showSettingsForAcceptedCookies() called');
+    console.log('[settings] showSettingsForAcceptedCookies() called');
 
     // Show settings button
     const settingsBtn = document.getElementById('settingsBtn');
     if (settingsBtn) {
         settingsBtn.style.display = 'block';
-        console.log('[settings] ✅ Settings button shown');
+        console.log('[settings] Settings button shown');
 
-        // Ensure settings modal is properly set up
+        // Ensure settings mode is properly set up
         setupSettingsModal();
 
-        // Load current user settings into the modal
+        // Load current user settings into the mode
         updateSettingsModalValues();
 
         // Apply current settings immediately
         applySettingsImmediately();
 
-        console.log('[settings] 🎛️ Settings modal reinitialized and current settings loaded');
+        console.log('[settings] Settings popup reinitialized and current settings loaded');
     } else {
-        console.log('[settings] ❌ Settings button NOT FOUND in DOM');
+        console.log('[settings] Settings button NOT FOUND in DOM');
     }
 }
 
@@ -454,19 +446,18 @@ function ensureCookieBannerVisible() {
         const userConsentKey = getConsentKey('cookie_consent');
         const cookieConsent = localStorage.getItem(userConsentKey) ?? localStorage.getItem('cookie_consent');
 
-        // Don't show if user permanently accepted
+        // If user accepted
         if (cookieConsent === 'accepted') {
-            console.log('[banner] User accepted permanently, no banner needed');
+            console.log('[banner] User accepted permanently');
             return;
         }
 
-        // Don't show if already shown this session
         if (sessionStorage.getItem('cookie_banner_shown_this_session') === 'true') {
-            console.log('[banner] Already shown this session, skipping');
+            console.log('[banner] Already shown this session');
             return;
         }
 
-        // Show banner if conditions are met
+        // Banner is shown only once per session
         if (!document.getElementById('cookieConsentBanner')) {
             console.log('[banner] creating new banner for new user or rejected consent');
             showCookieConsent();
@@ -480,17 +471,18 @@ function ensureCookieBannerVisible() {
 
 function resetCookieConsent(forceShow = true) {
     try {
-        // Clear global (legacy)
+        // Clear local storage consent
         localStorage.removeItem('cookie_consent');
-        // Clear user-specific consent
+        // Clear user specific consent
         localStorage.removeItem(getConsentKey('cookie_consent'));
-        // Set default state to 'rejected' for new users
+        // Defualt to rejected
         localStorage.setItem(getConsentKey('cookie_consent'), 'rejected');
         sessionStorage.removeItem('cookie_decision_made');
         localStorage.removeItem('analytics_enabled');
         localStorage.removeItem('cookie_consent_source');
         localStorage.removeItem('cookie_consent_decided_at');
-        // Clear user-scoped
+
+        // Clear user scope
         localStorage.removeItem(getConsentKey('cookie_consent'));
         localStorage.removeItem(getConsentKey('analytics_enabled'));
         localStorage.removeItem(getConsentKey('cookie_consent_source'));
@@ -506,13 +498,13 @@ function resetCookieConsent(forceShow = true) {
     } catch (e) { console.error('[reset] error:', e); }
 }
 
-// COOKIE CONSENT
-let cookieConsentInProgress = false; // Prevent multiple simultaneous banner calls
+// Cookie consent
+let cookieConsentInProgress = false; 
 
 function showCookieConsent() {
     console.log('[cookies] showCookieConsent() called');
     
-    // DOUBLE CHECK: Don't show banner on unauthenticated pages
+    // Banner only show in index, medication, record pages
     const currentPage = window.location.pathname.split('/').pop();
     const isUnauthenticatedPage = ['login.php', 'register.php', 'forgot_password.php', 'reset_password.php'].includes(currentPage);
     
@@ -523,20 +515,19 @@ function showCookieConsent() {
     
     // Prevent multiple simultaneous calls
     if (cookieConsentInProgress) {
-        console.log('[cookies] Cookie consent already in progress, skipping');
+        console.log('[cookies] Cookie consent already in progress');
         return;
     }
 
-    // Don't show if user already accepted (permanent decision)
+    // Don't show if user already accepted 
     const userConsentKey = getConsentKey('cookie_consent');
     const userConsent = localStorage.getItem(userConsentKey);
     const globalConsent = localStorage.getItem('cookie_consent');
     
     console.log('[cookies] Consent check - user:', userConsent, 'global:', globalConsent);
     
-    // Only check user-specific consent, ignore global consent for new users
     if (userConsent === 'accepted') {
-        console.log('[cookies] User personally accepted, skipping banner');
+        console.log('[cookies] User personally accepted');
         return;
     }
 
@@ -551,7 +542,7 @@ function showCookieConsent() {
     console.log('[cookies] Creating new cookie consent banner for authenticated page:', currentPage);
     cookieConsentInProgress = true;
 
-    // Create cookie consent banner
+    // Cookie consent banner
     const banner = document.createElement('div');
     banner.id = 'cookieConsentBanner';
     banner.className = 'fixed bottom-0 left-0 right-0 bg-gray-800 dark:bg-gray-900 text-white p-4 shadow-lg z-50 animate-slide-in';
@@ -560,7 +551,7 @@ function showCookieConsent() {
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex-1">
                     <p class="text-sm md:text-base">
-                        🍪 <strong>Choose Your Cookie Preferences</strong><br>
+                        <strong>Choose Your Cookie Preferences</strong><br>
                         This medical system can remember your display preferences (dark mode, table rows).<br>
                         <span class="text-green-300">Accept:</span> Your settings will be saved between visits.<br>
                         <span class="text-red-300">Reject:</span> Settings will reset each time you visit.<br>
@@ -581,12 +572,12 @@ function showCookieConsent() {
 
     document.body.appendChild(banner);
     
-    // Verify banner was added and is visible
-    console.log('[cookies] ✅ Banner created and added to page');
+    // Verify banner visibility
+    console.log('[cookies] Banner created and added to page');
     console.log('[cookies] Banner element:', banner);
     console.log('[cookies] Banner is visible:', banner.offsetHeight > 0);
     
-    // Double-check that settings button is hidden
+    // Settings hidden initially
     const settingsBtn = document.getElementById('settingsBtn');
     console.log('[cookies] Settings button found:', !!settingsBtn);
     console.log('[cookies] Settings button hidden:', settingsBtn ? settingsBtn.style.display === 'none' : 'N/A');
@@ -596,25 +587,24 @@ function showCookieConsent() {
         const now = String(Date.now());
         const currentUserId = getUserId();
         
-        console.log('[cookies] 🟢 ACCEPT BUTTON CLICKED - user ID:', currentUserId);
+        console.log('[cookies] Accepted button clicked by user ID:', currentUserId);
         
-        // Persist per-user permanently
+        // Check per user permanently
         const userConsentKey = getConsentKey('cookie_consent');
         localStorage.setItem(userConsentKey, 'accepted');
         localStorage.setItem(getConsentKey('analytics_enabled'), 'true');
         localStorage.setItem(getConsentKey('cookie_consent_source'), 'user');
         localStorage.setItem(getConsentKey('cookie_consent_decided_at'), now);
         
-        // Legacy/global for backward-compat
         localStorage.setItem('cookie_consent', 'accepted');
         localStorage.setItem('analytics_enabled', 'true');
         localStorage.setItem('cookie_consent_source', 'user');
         localStorage.setItem('cookie_consent_decided_at', now);
         
-        // Verify the saves worked
+        // Check save worked
         const savedUserConsent = localStorage.getItem(userConsentKey);
         const savedGlobalConsent = localStorage.getItem('cookie_consent');
-        console.log('[cookies] ✅ SAVE VERIFICATION:');
+        console.log('[cookies] saved cookies:');
         console.log('  - User consent key:', userConsentKey);
         console.log('  - User consent value:', savedUserConsent);
         console.log('  - Global consent value:', savedGlobalConsent);
@@ -622,10 +612,10 @@ function showCookieConsent() {
         // Mark session decision
         sessionStorage.setItem('cookie_decision_made', 'true');
         
-        console.log('[cookies] 💾 Permanent decision stored for user', currentUserId);
+        console.log('[cookies] Permanent decision stored for user', currentUserId);
         
         // Show settings since cookies are accepted
-        console.log('[cookies] 🔧 Calling showSettingsForAcceptedCookies()');
+        console.log('[cookies] Calling showSettingsForAcceptedCookies()');
         showSettingsForAcceptedCookies();
         
         banner.classList.add('animate-fade-out');
@@ -636,10 +626,9 @@ function showCookieConsent() {
             document.dispatchEvent(new CustomEvent('cookie-decision-made', { detail: { decision: 'accepted' } }));
         } catch (e) { }
         
-        // Reset the flag after successful acceptance
         cookieConsentInProgress = false;
         
-        console.log('[cookies] ✨ ACCEPT PROCESS COMPLETED');
+        console.log('[cookies] Cookies accept process completed for user', currentUserId);
     });
 
     // Reject cookies
@@ -682,9 +671,7 @@ function showCookieConsent() {
 }
 
 
-// CRITICAL FIX: Cookie consent should work on ALL pages, not just authenticated pages
-
-// INITIALIZATION
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     csrfToken = getCsrfToken();
 
@@ -695,49 +682,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log(`[consent] Current page: ${currentPage}, User ID: ${currentUserId}, Authenticated: ${isAuthenticatedPage}, Unauthenticated: ${isUnauthenticatedPage}`);
 
-    // ==================== UNAUTHENTICATED PAGES - SKIP COOKIE CONSENT ====================
+    //  Unauthenticated pages 
     if (isUnauthenticatedPage) {
         console.log('[consent] Unauthenticated page detected - SKIPPING cookie consent entirely');
-        initializeDarkMode(); // Only apply dark mode
-        return; // STOP HERE - don't run any cookie consent logic
+        initializeDarkMode(); 
+        return; 
     }
 
-    // ==================== AUTHENTICATED PAGES (index.php, medication.php, record.php) ====================
+    //  Authenticated pages
     if (isAuthenticatedPage && currentUserId && currentUserId !== 'guest') {
         console.log('[consent] Authenticated page - initializing cookie consent');
         
-        // Check stored consent - ONLY user-specific, no global fallback for new users
+        // Check stored consent only user specific
         const consentKey = getConsentKey('cookie_consent');
-        const storedConsent = localStorage.getItem(consentKey); // No fallback to global
+        const storedConsent = localStorage.getItem(consentKey); 
 
-        // DEBUG: Show all consent-related localStorage
-        console.log(`[consent] 🔍 DEBUGGING CONSENT STORAGE:`);
+        // Debug: Show all consent related to localStorage
+        console.log(`[consent]DEBUGGING CONSENT STORAGE:`);
         console.log(`  - Consent key for user: ${consentKey}`);
         console.log(`  - User consent value: ${localStorage.getItem(consentKey)}`);
         console.log(`  - Global consent value: ${localStorage.getItem('cookie_consent')}`);
         console.log(`  - User analytics: ${localStorage.getItem(getConsentKey('analytics_enabled'))}`);
         console.log(`  - Global analytics: ${localStorage.getItem('analytics_enabled')}`);
         
-        // Show a clear status message based on ONLY user-specific consent
         const userConsent = localStorage.getItem(consentKey);
         const globalConsent = localStorage.getItem('cookie_consent'); // For debugging only
         if (userConsent === 'accepted') {
-            console.log(`[consent] ✅ STATUS: USER ACCEPTED - Settings should be available`);
+            console.log(`[consent]STATUS: USER ACCEPTED - Settings should be available`);
         } else if (userConsent === null) {
-            console.log(`[consent] ⚠️  STATUS: NO USER DECISION - Banner should appear`);
+            console.log(`[consent] STATUS: NO USER DECISION - Banner should appear`);
         } else {
-            console.log(`[consent] ❌ STATUS: USER REJECTED - Settings disabled`);
+            console.log(`[consent] STATUS: USER REJECTED - Settings disabled`);
         }
 
         console.log(`[consent] Stored consent: ${storedConsent}`);
 
-        // If THIS user has personally accepted, show settings and NO banner
+        // If THIS user has personally accepted show settings and NO banner
         if (storedConsent === 'accepted') {
             sessionStorage.setItem('cookie_decision_made', 'true');
             showSettingsForAcceptedCookies();
             console.log('[cookies] User personally accepted, no popup needed');
         } else {
-            // If no permanent acceptance, check session state
+            // If no permanent acceptance check session state
             const sessionDecided = sessionStorage.getItem('cookie_decision_made') === 'true';
 
             console.log(`[consent] Session decision made: ${sessionDecided}`);
@@ -747,17 +733,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Only show banner if no session decision has been made
             if (!sessionDecided) {
-                console.log(`[cookies] No decision made yet - showing popup on ${currentPage}`);
+                console.log(`[cookies] No decision made yet and showing popup on ${currentPage}`);
                 showCookieConsent();
             } else {
-                console.log('[cookies] Session decision already made - not showing banner');
+                console.log('[cookies] Session decision already made and not showing banner');
             }
         }
 
-        // Handle user session changes (logout/login)
         const lastUserId = sessionStorage.getItem('last_logged_in_user');
         if (lastUserId && lastUserId !== currentUserId.toString()) {
-            console.log(`[consent] New user session detected - clearing session data`);
+            console.log(`[consent] New user session detected and clearing session data`);
             sessionStorage.removeItem('cookie_banner_shown_this_session');
             sessionStorage.removeItem('cookie_decision_made');
             sessionStorage.removeItem('cookies_rejected_this_session');
@@ -767,36 +752,34 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeDarkMode();
         setupSettingsSync();
 
-        // Setup settings modal if it exists
+        // Setup settings popup if it exists
         if (document.getElementById('settingsModal')) {
             setupSettingsModal();
         }
     } 
-    // ==================== OTHER PAGES (unknown/unsupported) ====================
     else {
-        console.log('[consent] Unknown page or guest user - no cookie consent needed');
-        initializeDarkMode(); // Apply dark mode only
+        console.log('[consent] Unknown page or guest user and no cookie consent needed');
+        initializeDarkMode(); 
     }
 
-    // Expose dev helpers (only in development/localhost)
+    // Expose dev helpers only on localhost
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         try {
-            // TEST HELPER - Manually trigger cookie acceptance
+            // TEST = to Manually trigger cookie acceptance
             window.testAcceptCookies = () => {
-                console.log('🧪 TESTING COOKIE ACCEPTANCE...');
+                console.log('TESTING COOKIE ACCEPTANCE...');
                 const now = new Date().toISOString();
                 const currentUserId = getUserId();
                 
                 console.log('[test] Current user ID:', currentUserId);
                 
-                // Persist per-user permanently
+                // Persist per user permanently
                 const userConsentKey = getConsentKey('cookie_consent');
                 localStorage.setItem(userConsentKey, 'accepted');
                 localStorage.setItem(getConsentKey('analytics_enabled'), 'true');
                 localStorage.setItem(getConsentKey('cookie_consent_source'), 'user');
                 localStorage.setItem(getConsentKey('cookie_consent_decided_at'), now);
                 
-                // Legacy/global for backward-compat
                 localStorage.setItem('cookie_consent', 'accepted');
                 localStorage.setItem('analytics_enabled', 'true');
                 localStorage.setItem('cookie_consent_source', 'user');
@@ -808,7 +791,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Verify the saves worked
                 const savedUserConsent = localStorage.getItem(userConsentKey);
                 const savedGlobalConsent = localStorage.getItem('cookie_consent');
-                console.log('[test] ✅ SAVE VERIFICATION:');
+                console.log('[test] SAVE VERIFICATION:');
                 console.log('  - User consent key:', userConsentKey);
                 console.log('  - User consent value:', savedUserConsent);
                 console.log('  - Global consent value:', savedGlobalConsent);
@@ -823,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Show settings
                 showSettingsForAcceptedCookies();
                 
-                console.log('[test] ✨ TEST COMPLETED - Refresh page to see if banner is gone');
+                console.log('[test] TEST COMPLETED: Refresh page to see if banner is gone');
             };
             
             window.resetCookieConsent = resetCookieConsent;
@@ -835,19 +818,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userConsent = localStorage.getItem(getConsentKey('cookie_consent'));
                 const globalConsent = localStorage.getItem('cookie_consent');
                 
-                console.log('🍪 COOKIE CONSENT STATUS:');
+                console.log('COOKIE CONSENT STATUS:');
                 console.log(`User ID: ${userId}`);
                 console.log(`User consent: ${userConsent}`);
                 console.log(`Global consent: ${globalConsent}`);
                 
                 if (userConsent === 'accepted' || globalConsent === 'accepted') {
-                    console.log('✅ RESULT: Cookies are ACCEPTED');
+                    console.log('RESULT: Cookies are ACCEPTED');
                     return 'ACCEPTED';
                 } else if (userConsent === null && globalConsent === null) {
-                    console.log('⚠️  RESULT: No decision made yet');
+                    console.log(' RESULT: No decision made yet');
                     return 'NO_DECISION';
                 } else {
-                    console.log('❌ RESULT: Cookies are REJECTED');
+                    console.log('RESULT: Cookies are REJECTED');
                     return 'REJECTED';
                 }
             };
@@ -858,7 +841,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const globalConsent = localStorage.getItem('cookie_consent');
                 const sessionDecision = sessionStorage.getItem('cookie_decision_made');
 
-                console.log('🍪 Consent Status for user:', userId);
+                console.log('Consent Status for user:', userId);
                 console.log('├─ User-specific consent:', userConsent);
                 console.log('├─ Global consent:', globalConsent);
                 console.log('├─ Session decision made:', sessionDecision);
@@ -876,20 +859,18 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { }
     }
 
-    // Expose dev helpers
     try {
         window.resetCookieConsent = resetCookieConsent;
         window.ensureCookieBannerVisible = ensureCookieBannerVisible;
         window.initializeUserConsent = initializeUserConsent;
         window.showCookieConsent = showCookieConsent; // Make available for testing
         window.testCookieConsent = () => {
-            // Clear session flag to allow banner to show again
+            // Clear session desecion to allow banner to show again
             sessionStorage.removeItem('cookie_banner_shown_this_session');
             sessionStorage.removeItem('cookie_decision_made');
             const existing = document.getElementById('cookieConsentBanner');
             if (existing) existing.remove();
             showCookieConsent();
-            // Removed setTimeout(ensureCookieBannerVisible, 200) - causes conflicts
             console.log('Cookie consent banner triggered for testing');
         };
         window.checkConsentStatus = () => {
@@ -900,7 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const userSource = localStorage.getItem(getConsentKey('cookie_consent_source'));
             const globalSource = localStorage.getItem('cookie_consent_source');
 
-            console.log('🍪 Consent Status for user:', userId);
+            console.log('Consent Status for user:', userId);
             console.log('├─ User-specific consent:', userConsent, userSource ? `(source: ${userSource})` : '');
             console.log('├─ Global consent:', globalConsent, globalSource ? `(source: ${globalSource})` : '');
             console.log('├─ Session decision made:', sessionDecision);
@@ -917,38 +898,38 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         };
         window.simulateUserAccept = () => {
-            console.log('🧪 Simulating user accepting cookies...');
+            console.log('Simulating user accepting cookies...');
             // Trigger the banner and auto-accept
             window.testCookieConsent();
             setTimeout(() => {
                 const acceptBtn = document.getElementById('acceptCookies');
                 if (acceptBtn) {
                     acceptBtn.click();
-                    console.log('✅ Auto-clicked Accept button');
+                    console.log('Auto-clicked Accept button');
                     setTimeout(() => {
-                        console.log('🔍 Checking if decision was remembered...');
+                        console.log('Checking if decision was remembered...');
                         window.checkConsentStatus();
                     }, 1000);
                 }
             }, 500);
         };
         window.testConsentMemory = () => {
-            console.log('🧪 Testing consent memory system...');
-            console.log('1️⃣ Checking initial state:');
+            console.log('Testing consent memory system...');
+            console.log('Checking initial state:');
             window.checkConsentStatus();
 
-            console.log('2️⃣ Simulating user accepting cookies...');
+            console.log('Simulating user accepting cookies...');
             window.simulateUserAccept();
 
             setTimeout(() => {
-                console.log('3️⃣ Testing if system remembers decision (trying to show banner again):');
+                console.log('Testing if system remembers decision (trying to show banner again):');
                 window.testCookieConsent(); // This should NOT show banner if user accepted
                 setTimeout(() => {
                     const banner = document.getElementById('cookieConsentBanner');
                     if (banner && banner.style.display !== 'none') {
-                        console.log('❌ FAIL: Banner appeared even though user accepted');
+                        console.log('FAIL: Banner appeared even though user accepted');
                     } else {
-                        console.log('✅ SUCCESS: Banner did not appear - user decision remembered!');
+                        console.log('SUCCESS: Banner did not appear - user decision remembered!');
                     }
                 }, 1000);
             }, 3000);
@@ -956,7 +937,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { }
 });
 
-// EXPORT FOR USE IN OTHER SCRIPTS
+// Exports used in other scripts
 window.commonUtils = {
     getCookie,
     setCookie,
@@ -976,7 +957,7 @@ window.commonUtils = {
     isCookieDecisionMade
 };
 
-// DEBUG: Temporary function to completely reset cookie consent (for testing)
+// Debug by function to completely reset cookie consent (for testing)
 window.debugResetConsent = function () {
     const userId = getUserId();
     console.log('[DEBUG] Completely resetting all cookie consent data for user:', userId);
@@ -991,24 +972,22 @@ window.debugResetConsent = function () {
     localStorage.removeItem(getConsentKey('cookie_consent_source'));
     localStorage.removeItem(getConsentKey('cookie_consent_decided_at'));
 
-    // Clear sessionStorage - including the rejection flag that's causing the issue
+    // Clear sessionStorage including cookiedesision
     sessionStorage.removeItem('cookie_decision_made');
     sessionStorage.removeItem('cookie_banner_shown_this_session');
-    sessionStorage.removeItem('cookies_rejected_this_session'); // This was missing!
+    sessionStorage.removeItem('cookies_rejected_this_session'); 
     sessionStorage.removeItem('last_logged_in_user');
 
     console.log('[DEBUG] All consent data cleared INCLUDING session rejection flag. Refresh page to see popup.');
     alert('All cookie consent data cleared. Refresh the page to see the popup.');
 };
 
-// DEBUG: Force clear session storage immediately (nuclear option)
+// Debug force clear session of storage immediately
 window.forceResetSession = function () {
     console.log('[DEBUG] FORCE clearing session storage');
-    sessionStorage.clear(); // Nuclear option - clears everything
+    sessionStorage.clear();
     localStorage.removeItem(getConsentKey('cookie_consent'));
     localStorage.removeItem('cookie_consent');
     console.log('[DEBUG] Session storage completely cleared. Refresh page.');
     alert('Session storage completely cleared. Refresh page now.');
 };
-
-// Export for use in templates is no longer needed

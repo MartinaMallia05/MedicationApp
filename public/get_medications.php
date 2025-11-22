@@ -7,6 +7,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
+// Fallback medication list
 $fallbackMeds = [
     'Acetaminophen (Tylenol)',
     'Amoxicillin',
@@ -68,6 +69,7 @@ try {
     
     $apiData = null;
     
+    // Attempt to fetch from each API until one succeeds
     foreach ($apiUrls as $apiUrl) {
         try {
             $context = stream_context_create([
@@ -86,6 +88,7 @@ try {
                 ]
             ]);
             
+            // Fetch data from API
             $response = @file_get_contents($apiUrl, false, $context);
             
             if ($response !== false) {
@@ -120,7 +123,7 @@ try {
         exit;
     }
     
-    // If APIs fail, use fallback
+    // If APIs fail use fallback
     throw new Exception('API unavailable');
     
 } catch (Exception $e) {

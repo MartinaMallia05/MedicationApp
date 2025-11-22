@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical System - Patient Management</title>
+    <!-- CSRF token for security -->
     <meta name="csrf-token" content="{{ csrfToken }}">
+    <!-- Current user ID -->
     <meta name="user-id" content="{{ userId }}">
-    <!-- TODO: Replace CDN with production Tailwind setup via npm/PostCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="css/style.css" rel="stylesheet">
     <script>
@@ -47,12 +48,15 @@
         </div>
     </header>
 
+    <!-- Navigation menu-->
     <nav class="bg-white dark:bg-gray-800 shadow-md">
         <div class="container mx-auto px-4">
             <div class="flex gap-4 py-3">
                 <a href="index.php" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold">
                     👤 Patients
                 </a>
+                
+                <!-- Medications page (doctor/nurse only) -->
                 {% if role == 'doctor' or role == 'nurse' %}
                 <a href="medication.php" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition">
                     💊 Medications
@@ -152,12 +156,14 @@
             </form>
         </section>
 
+        <!-- Patient List Table Section -->
         <section class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
             <div class="p-4 border-b border-gray-200 dark:border-gray-700">
                 <h3 class="text-xl font-bold text-gray-800 dark:text-white">📅 Recent Patients (DESC)</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Showing most recently registered patients first</p>
             </div>
             <div class="overflow-x-auto">
+            <!-- Patient data table -->
                 <table class="w-full">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
@@ -188,6 +194,7 @@
         </div>
     </footer>
 
+    <-- Settings -->
     <div id="settingsModal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
             <div class="flex justify-between items-center mb-6">
@@ -196,6 +203,7 @@
             </div>
             
             <div class="space-y-4">
+                <!-- Dark mode -->
                 <div class="flex items-center justify-between">
                     <label class="text-gray-700 dark:text-gray-300 font-medium">🌙 Dark Mode</label>
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -204,6 +212,7 @@
                     </label>
                 </div>
                 
+                <!-- Table rows -->
                 <div class="flex items-center justify-between">
                     <label class="text-gray-700 dark:text-gray-300 font-medium">📊 Table Limit</label>
                     <select id="tableLimitSelect" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">

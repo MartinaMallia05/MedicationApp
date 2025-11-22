@@ -2,6 +2,7 @@
 session_start();
 
 if (isset($_SESSION['user_id'])) {
+    // User is already logged in redirect to homepage
     header('Location: index.php');
     exit;
 }

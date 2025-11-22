@@ -1,26 +1,18 @@
--- ============================================================
--- DROP EXISTING DATABASE AND TABLES (safe order)
--- ============================================================
+-- Drop existing database if exists
 DROP DATABASE IF EXISTS medical_db;
 
--- ============================================================
--- CREATE DATABASE AND USE IT
--- ============================================================
+-- Create database
 CREATE DATABASE IF NOT EXISTS medical_db;
 USE medical_db;
 
--- ============================================================
 -- TABLE: TBL_Country
--- ============================================================
 CREATE TABLE TBL_Country (
     Country_Rec_Ref INT AUTO_INCREMENT PRIMARY KEY,
     Country VARCHAR(100),
     In_Use BOOLEAN DEFAULT 1
 );
 
--- ============================================================
 -- TABLE: TBL_Town
--- ============================================================
 CREATE TABLE TBL_Town (
     Town_Rec_Ref INT AUTO_INCREMENT PRIMARY KEY,
     Town VARCHAR(100),
@@ -29,18 +21,15 @@ CREATE TABLE TBL_Town (
     FOREIGN KEY (Country_Rec_Ref) REFERENCES TBL_Country(Country_Rec_Ref)
 );
 
--- ============================================================
 -- TABLE: TBL_Gender
--- ============================================================
 CREATE TABLE TBL_Gender (
     Gender_Rec_Ref INT AUTO_INCREMENT PRIMARY KEY,
     Gender VARCHAR(50),
     In_Use BOOLEAN DEFAULT 1
 );
 
--- ============================================================
+
 -- TABLE: TBL_Patient
--- ============================================================
 CREATE TABLE TBL_Patient (
     Patient_ID INT AUTO_INCREMENT PRIMARY KEY,
     Patient_Number VARCHAR(8),
@@ -58,9 +47,8 @@ CREATE TABLE TBL_Patient (
     FOREIGN KEY (Gender_Rec_Ref) REFERENCES TBL_Gender(Gender_Rec_Ref)
 );
 
--- ============================================================
+
 -- TABLE: TBL_Medication
--- ============================================================
 CREATE TABLE TBL_Medication (
     Medication_Rec_Ref INT AUTO_INCREMENT PRIMARY KEY,
     System_Date DATE,
@@ -69,9 +57,8 @@ CREATE TABLE TBL_Medication (
     FOREIGN KEY (Patient_ID) REFERENCES TBL_Patient(Patient_ID)
 );
 
--- ============================================================
--- TABLE: TBL_User (with password reset + tracking columns)
--- ============================================================
+
+-- TABLE: TBL_User 
 CREATE TABLE TBL_User (
     User_ID INT AUTO_INCREMENT PRIMARY KEY,
     Username VARCHAR(50) NOT NULL UNIQUE,
@@ -83,10 +70,6 @@ CREATE TABLE TBL_User (
     Last_Login TIMESTAMP NULL DEFAULT NULL,
     Is_Active BOOLEAN DEFAULT 1
 );
-
--- ============================================================
--- INSERT: Malta and Gozo Data
--- ============================================================
 
 -- Insert Malta
 INSERT INTO TBL_Country (Country, In_Use) VALUES ('Malta', 1);
@@ -124,7 +107,7 @@ INSERT INTO TBL_Town (Town, In_Use, Country_Rec_Ref) VALUES
 INSERT INTO TBL_Country (Country, In_Use) VALUES ('Gozo', 1);
 SET @gozo_id = LAST_INSERT_ID();
 
--- Insert Gozo towns/villages
+-- Insert Gozo towns
 INSERT INTO TBL_Town (Town, In_Use, Country_Rec_Ref) VALUES
 ('Victoria (Rabat)', 1, @gozo_id),
 ('Nadur', 1, @gozo_id),
@@ -141,28 +124,24 @@ INSERT INTO TBL_Town (Town, In_Use, Country_Rec_Ref) VALUES
 ('Qala', 1, @gozo_id),
 ('Għajnsielem', 1, @gozo_id);
 
--- ============================================================
+
 -- INSERT: Gender Data
--- ============================================================
+
 INSERT INTO TBL_Gender (Gender, In_Use) VALUES
 ('Male', 1),
 ('Female', 1),
 ('Other', 1);
 
--- ============================================================
--- ALTER TABLE: Add User Relationships for Audit Trail
--- ============================================================
-
--- Add missing Medication_Name field to TBL_Medication (only if it doesn't exist)
+-- Add missing Medication_Name field to TBL_Medication 
 ALTER TABLE TBL_Medication 
 ADD COLUMN IF NOT EXISTS Medication_Name VARCHAR(255) AFTER Medication_Rec_Ref;
 
--- Add User relationship to TBL_Patient (who created the patient record)
+-- Add User relationship to TBL_Patient 
 ALTER TABLE TBL_Patient 
 ADD COLUMN IF NOT EXISTS Created_By_User_ID INT,
 ADD COLUMN IF NOT EXISTS Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
--- Add foreign key constraint for Patient creator (only if not exists)
+-- Add foreign key constraint for Patient creator
 SET @fk_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
                   WHERE TABLE_SCHEMA = 'medical_db' 
                   AND TABLE_NAME = 'TBL_Patient' 
@@ -175,12 +154,12 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
--- Add User relationship to TBL_Medication (who prescribed the medication)
+-- Add User relationship to TBL_Medication
 ALTER TABLE TBL_Medication 
 ADD COLUMN IF NOT EXISTS Prescribed_By_User_ID INT,
 ADD COLUMN IF NOT EXISTS Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
--- Add foreign key constraint for Medication prescriber (only if not exists)
+-- Add foreign key constraint for Medication prescriber 
 SET @fk_exists2 = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
                    WHERE TABLE_SCHEMA = 'medical_db' 
                    AND TABLE_NAME = 'TBL_Medication' 
@@ -193,12 +172,7 @@ PREPARE stmt2 FROM @sql2;
 EXECUTE stmt2;
 DEALLOCATE PREPARE stmt2;
 
--- ============================================================
--- UPDATE EXISTING DATA: Set default values for new columns
--- ============================================================
-
--- Update existing patients to have a default creator (first admin user)
--- This prevents NULL foreign key issues
+-- Update existing patients to have a default creator
 UPDATE TBL_Patient 
 SET Created_By_User_ID = (SELECT User_ID FROM TBL_User WHERE Role = 'admin' LIMIT 1)
 WHERE Created_By_User_ID IS NULL;
