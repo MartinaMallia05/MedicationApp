@@ -462,6 +462,32 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Patient ID Card must be 7 digits followed by a letter (e.g., 1234567A)'], 400);
         }
 
+        // Validate DOB: not in future, not more than 100 years ago
+        if ($dob) {
+            $dobDate = strtotime($dob);
+            $now = strtotime(date('Y-m-d'));
+            $hundredYearsAgo = strtotime('-100 years', $now);
+            if ($dobDate > $now) {
+                respond(['success' => false, 'message' => 'Date of birth cannot be in the future.'], 400);
+            }
+            if ($dobDate < $hundredYearsAgo) {
+                respond(['success' => false, 'message' => 'Date of birth cannot be more than 100 years ago.'], 400);
+            }
+        }
+
+        // Check uniqueness of Patient_Number
+        if ($patientNumber) {
+            $checkStmt = $conn->prepare("SELECT COUNT(*) as count FROM TBL_Patient WHERE Patient_Number = ?");
+            $checkStmt->bind_param("s", $patientNumber);
+            $checkStmt->execute();
+            $result = $checkStmt->get_result();
+            $row = $result->fetch_assoc();
+            $checkStmt->close();
+            if ($row['count'] > 0) {
+                respond(['success' => false, 'message' => 'Patient ID Card already exists. Please enter a unique value.'], 400);
+            }
+        }
+
         // Get current user ID for audit trail
         $currentUserId = $_SESSION['user_id'] ?? 1; // Fallback to user 1 if session issue
 

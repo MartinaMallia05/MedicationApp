@@ -40,21 +40,15 @@ function renderMedicationsTable() {
     recentMedications.forEach(med => {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition';
-        // Table with the Patient ID Card, Name, Medication, Date, Prescribed By, Remarks, Actions
+        // Table with the Patient ID Card, Name, Medication, Date, Remarks, Actions (Prescribed_By is hidden)
         row.innerHTML = `
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Patient_Number) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Patient_Surname)}, ${window.commonUtils.escapeHtml(med.Patient_Name)}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Medication_Name) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.formatDate(med.System_Date)}</td>
-            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${med.Prescribed_By ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}">
-                    ${med.Prescribed_By ? '👨‍⚕️ ' + window.commonUtils.escapeHtml(med.Prescribed_By) : '❓ Unknown'}
-                </span>
-            </td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(med.Remarks) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm">
                 <div class="flex gap-1 flex-wrap">
-                
                     <button onclick="editMedication(${med.Medication_Rec_Ref})" class="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600">✏️ Edit</button>
                     <button onclick="deleteMedication(${med.Medication_Rec_Ref})" class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600">🗑️ Delete</button>
                 </div>

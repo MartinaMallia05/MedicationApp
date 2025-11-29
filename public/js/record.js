@@ -79,11 +79,6 @@ function renderRecordsTable() {
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Country) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Town) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Medication_Name) || 'N/A'}</td>
-            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${record.Prescribed_By ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}">
-                    ${record.Prescribed_By ? '👨‍⚕️ ' + window.commonUtils.escapeHtml(record.Prescribed_By) : '❓ Unknown'}
-                </span>
-            </td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.formatDate(record.System_Date)}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(record.Remarks) || 'N/A'}</td>
         `;
