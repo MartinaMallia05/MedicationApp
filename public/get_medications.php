@@ -64,7 +64,7 @@ try {
     // Try EndlessMedical API first
     $apiUrls = [
         'https://endlessmedical.com/api/diseases',
-        'https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search?terms=&maxList=50'
+        'https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search?terms=&maxList=50' // Fallback API
     ];
     
     $apiData = null;

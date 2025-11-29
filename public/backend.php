@@ -1,9 +1,9 @@
 <?php
 if (php_sapi_name() === 'cli') {
-    echo "This proxy should be called via HTTP from the public web root.";
+    echo "This script is intended to be run via a web server.";
     exit;
 }
 
-// Need to include the backend script thats private
+// Backend script thats private
 require_once __DIR__ . '/../src/backend.php';
 exit;

@@ -7,7 +7,7 @@ if (isset($_COOKIE[session_name()])) {
     setcookie(session_name(), '', time() - 3600, '/');
 }
 
-// Clear session storage via JavaScript before redirect
+// Clear session storage before redirect
 echo '
 <!DOCTYPE html>
 <html>

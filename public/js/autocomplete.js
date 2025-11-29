@@ -28,6 +28,7 @@ class AutocompleteField {
     
     createSuggestionsList() {
         this.suggestionsList = document.createElement('ul');
+        // Styling for the suggestions dropdown
         this.suggestionsList.className = 'absolute z-50 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden';
         this.input.parentNode.style.position = 'relative';
         this.input.parentNode.appendChild(this.suggestionsList);
@@ -49,7 +50,8 @@ class AutocompleteField {
         }
         
         this.showLoading();
-        
+
+        // Fetch suggestions from server        
         try {
             const controller = new AbortController();
             this.currentRequest = controller;
@@ -139,6 +141,7 @@ class AutocompleteField {
         }
     }
     
+    // Update visual selection
     updateSelection() {
         const items = this.suggestionsList.querySelectorAll('li[data-index]');
         items.forEach((item, index) => {
@@ -150,22 +153,26 @@ class AutocompleteField {
         });
     }
     
+    // Select a suggestion
     selectSuggestion(value) {
         this.input.value = value;
         this.hideSuggestions();
         this.input.dispatchEvent(new Event('change', { bubbles: true }));
     }
     
+    // Hide suggestions on blur
     handleBlur() {
         setTimeout(() => { this.hideSuggestions(); }, 150);
     }
     
+    // Hide suggestions list
     hideSuggestions() {
         this.suggestionsList.classList.add('hidden');
         this.isOpen = false;
         this.selectedIndex = -1;
     }
     
+    // Limit the rate of function calls
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {

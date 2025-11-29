@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const newPassword = document.getElementById("new_password").value;
     const confirmPassword = document.getElementById("confirm_password").value;
     
+    // Validation
     if (!username || !token || !newPassword || !confirmPassword) {
       showMessage("Please fill in all fields", "error");
       return;
@@ -27,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
+    // Disable button and show loading state
     resetBtn.disabled = true;
     resetBtn.textContent = "Resetting...";
     
@@ -44,10 +46,12 @@ document.addEventListener("DOMContentLoaded", () => {
         body: formData
       });
       
+      // Check for HTTP errors
       if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
       
       const data = await res.json();
       
+      // Success or failure
       if (data.success) {
         showMessage(data.message, "success");
         resetForm.reset();

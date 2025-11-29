@@ -96,6 +96,7 @@ function setupPatientSearch() {
     });
 }
 
+// Load patients for search dropdown
 async function loadPatientsForSearch() {
     try {
         const res = await fetch('backend.php?action=get_patients');
@@ -108,6 +109,7 @@ async function loadPatientsForSearch() {
     }
 }
 
+// Display patient options in dropdown
 function displayPatientOptions(patients) {
     const dropdown = document.getElementById('patientDropdown');
     if (!dropdown) return;
@@ -171,6 +173,7 @@ window.editMedication = async function(id) {
     }
 };
 
+// Delete medication record
 window.deleteMedication = async function(id) {
     if (!confirm('Delete this medication record?')) return;
     
@@ -232,6 +235,7 @@ function setupMedicationForm() {
         }
     });
     
+    // Reset form
     document.getElementById('medReset')?.addEventListener('click', () => {
         form.reset();
         document.getElementById('medicationRef').value = '';

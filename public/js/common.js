@@ -9,16 +9,19 @@ function getCookie(name) {
     return null;
 }
 
+// Cookie with options
 function setCookie(name, value, days = 30) {
     const expires = new Date(Date.now() + days * 864e5).toUTCString();
     document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
 }
 
+// CSRF token for secure requests
 function getCsrfToken() {
     const metaTag = document.querySelector('meta[name="csrf-token"]');
     return metaTag ? metaTag.getAttribute('content') : '';
 }
 
+// Escape HTML to prevent XSS
 function escapeHtml(text) {
     if (text === null || text === undefined) return '';
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
@@ -40,7 +43,7 @@ function formatDate(dateString) {
     }
 }
 
-// Notification for when changes are made / errors
+// Notification for when changes are made or errors
 function showNotification(message, type = 'info') {
     const colors = {
         success: 'bg-green-500',
@@ -100,10 +103,12 @@ async function loadDropdowns() {
     }
 }
 
+// Load towns depending on selected country
 async function loadTowns(countryId) {
     const townSelect = document.getElementById('townSelect');
     if (!townSelect) return;
 
+    // Show loading state
     townSelect.innerHTML = '<option value="">Loading towns...</option>';
     if (!countryId) {
         townSelect.innerHTML = '<option value="">Select Country First</option>';
@@ -156,6 +161,8 @@ async function loadMedications() {
             'Acetaminophen', 'Amoxicillin', 'Aspirin', 'Ibuprofen',
             'Metformin', 'Lisinopril', 'Atorvastatin', 'Omeprazole'
         ];
+
+        // Populate
         medicationSelect.innerHTML = '<option value="">Select Medication</option>' +
             fallbackMeds.map(med => `<option value="${med}">${med}</option>`).join('');
         showNotification('Using default medication list', 'warning');
@@ -193,7 +200,7 @@ function getUserId() {
 }
 
 function getSettingKey(key) {
-    // Create user specific setting/cookies based on user ID
+    // Specific cookies based on user ID
     const currentUserId = getUserId();
     const settingKey = `settings_${currentUserId}_${key}`;
     console.log('Setting key:', settingKey);
@@ -204,7 +211,7 @@ function getUserSetting(key, defaultValue = null) {
     const storageKey = getSettingKey(key);
     const value = localStorage.getItem(storageKey);
     
-    // Defaults for guest user (if cookies not accepted)
+    // Defaults for guest user if cookies not accepted
     const currentUserId = getUserId();
     if (currentUserId === 'guest' && value === null) {
         if (key === 'dark_mode') {
@@ -275,7 +282,7 @@ function setupSettingsModal() {
 
         console.log(`[settings] Saving settings for user ${currentUserId}: darkMode=${darkMode}, tableLimit=${tableLimit}`);
 
-        // Save user-specific settings to localStorage
+        // Save user specific settings to localStorage
         setUserSetting('dark_mode', darkMode);
         setUserSetting('table_limit', tableLimit);
 
@@ -396,7 +403,7 @@ function getConsentKey(key) {
 
 function isCookieDecisionMade() {
     const userConsent = localStorage.getItem(getConsentKey('cookie_consent'));
-    // Default to 'rejected' for new users only return true if 'accepted'
+    // Default to rejected for new users only return true if accepted
     return sessionStorage.getItem('cookie_decision_made') === 'true' || userConsent === 'accepted';
 }
 
@@ -519,7 +526,7 @@ function showCookieConsent() {
         return;
     }
 
-    // Don't show if user already accepted 
+    // Do not show if user already accepted 
     const userConsentKey = getConsentKey('cookie_consent');
     const userConsent = localStorage.getItem(userConsentKey);
     const globalConsent = localStorage.getItem('cookie_consent');
@@ -633,7 +640,7 @@ function showCookieConsent() {
 
     // Reject cookies
     document.getElementById('rejectCookies').addEventListener('click', () => {
-        // Mark session decision but don't store permanently
+        // Mark session decision but do not store permanently
         sessionStorage.setItem('cookie_decision_made', 'true');
         sessionStorage.setItem('cookies_rejected_this_session', 'true');
 
@@ -699,11 +706,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Debug: Show all consent related to localStorage
         console.log(`[consent]DEBUGGING CONSENT STORAGE:`);
-        console.log(`  - Consent key for user: ${consentKey}`);
-        console.log(`  - User consent value: ${localStorage.getItem(consentKey)}`);
-        console.log(`  - Global consent value: ${localStorage.getItem('cookie_consent')}`);
-        console.log(`  - User analytics: ${localStorage.getItem(getConsentKey('analytics_enabled'))}`);
-        console.log(`  - Global analytics: ${localStorage.getItem('analytics_enabled')}`);
+        console.log(`Consent key for user: ${consentKey}`);
+        console.log(`User consent value: ${localStorage.getItem(consentKey)}`);
+        console.log(`Global consent value: ${localStorage.getItem('cookie_consent')}`);
+        console.log(`User analytics: ${localStorage.getItem(getConsentKey('analytics_enabled'))}`);
+        console.log(`Global analytics: ${localStorage.getItem('analytics_enabled')}`);
         
         const userConsent = localStorage.getItem(consentKey);
         const globalConsent = localStorage.getItem('cookie_consent'); // For debugging only
@@ -765,7 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Expose dev helpers only on localhost
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         try {
-            // TEST = to Manually trigger cookie acceptance
+            // TEST: Manually trigger cookie acceptance
             window.testAcceptCookies = () => {
                 console.log('TESTING COOKIE ACCEPTANCE...');
                 const now = new Date().toISOString();
@@ -835,6 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
             
+            // Consent status checker
             window.checkConsentStatus = () => {
                 const userId = getUserId();
                 const userConsent = localStorage.getItem(getConsentKey('cookie_consent'));
@@ -842,10 +850,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sessionDecision = sessionStorage.getItem('cookie_decision_made');
 
                 console.log('Consent Status for user:', userId);
-                console.log('├─ User-specific consent:', userConsent);
-                console.log('├─ Global consent:', globalConsent);
-                console.log('├─ Session decision made:', sessionDecision);
-                console.log('└─ Would show banner:', !(userConsent === 'accepted' || globalConsent === 'accepted'));
+                console.log('User-specific consent:', userConsent);
+                console.log('Global consent:', globalConsent);
+                console.log('Session decision made:', sessionDecision);
+                console.log('Would show banner:', !(userConsent === 'accepted' || globalConsent === 'accepted'));
 
                 return {
                     userId,
@@ -882,12 +890,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const globalSource = localStorage.getItem('cookie_consent_source');
 
             console.log('Consent Status for user:', userId);
-            console.log('├─ User-specific consent:', userConsent, userSource ? `(source: ${userSource})` : '');
-            console.log('├─ Global consent:', globalConsent, globalSource ? `(source: ${globalSource})` : '');
-            console.log('├─ Session decision made:', sessionDecision);
-            console.log('├─ Effective consent:', userConsent || globalConsent);
-            console.log('└─ Would show banner:', !(userConsent === 'accepted' || globalConsent === 'accepted'));
-
+            console.log('User-specific consent:', userConsent, userSource ? `(source: ${userSource})` : '');
+            console.log('Global consent:', globalConsent, globalSource ? `(source: ${globalSource})` : '');
+            console.log('Session decision made:', sessionDecision);
+            console.log('Effective consent:', userConsent || globalConsent);
+            console.log('Would show banner:', !(userConsent === 'accepted' || globalConsent === 'accepted'));
             return {
                 userId,
                 userConsent,
@@ -899,7 +906,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         window.simulateUserAccept = () => {
             console.log('Simulating user accepting cookies...');
-            // Trigger the banner and auto-accept
+            // Trigger the banner and autoaccept
             window.testCookieConsent();
             setTimeout(() => {
                 const acceptBtn = document.getElementById('acceptCookies');
@@ -957,7 +964,7 @@ window.commonUtils = {
     isCookieDecisionMade
 };
 
-// Debug by function to completely reset cookie consent (for testing)
+// Debug by function to completely reset cookie consent for testing
 window.debugResetConsent = function () {
     const userId = getUserId();
     console.log('[DEBUG] Completely resetting all cookie consent data for user:', userId);

@@ -102,7 +102,7 @@ function updatePagination() {
     
     const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
     
-    // Adjust current page if it's beyond the new total pages
+    // Adjust current page if it is beyond the new total pages
     if (currentPage > totalPages && totalPages > 0) {
         currentPage = totalPages;
     }
@@ -113,6 +113,7 @@ function updatePagination() {
     nextBtn.disabled = currentPage === totalPages || totalPages === 0;
 }
 
+// Pagination controls
 window.prevPage = function() {
     if (currentPage > 1) {
         currentPage--;
@@ -121,6 +122,7 @@ window.prevPage = function() {
     }
 };
 
+// Next page
 window.nextPage = function() {
     const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
     if (currentPage < totalPages) {
@@ -138,7 +140,7 @@ function performSearch() {
     filteredRecords = allRecords.filter(record => {
         let matches = true;
         
-        // Check main search query (searches all fields)
+        // Check main search query
         if (mainQuery) {
             const searchText = `
                 ${record.Patient_Number || ''}
@@ -152,7 +154,7 @@ function performSearch() {
             matches = matches && searchText.includes(mainQuery);
         }
         
-        // Check medication-specific query
+        // Check medication specific query
         if (medicationQuery) {
             const medicationName = (record.Medication_Name || '').toLowerCase();
             matches = matches && medicationName.includes(medicationQuery);
@@ -181,7 +183,7 @@ function setupSearch() {
     searchInput.addEventListener('input', performSearch);
 }
 
-// INIT record page
+// Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async () => {
     // Get table limit from user specific settings
     itemsPerPage = parseInt(window.commonUtils.getUserSetting('table_limit', '10'));
@@ -192,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (window.createAutocomplete) {
         const medicationInput = document.getElementById('medicationAutocomplete');
         
-        // Add real-time filtering as user types in medication field
+        // Add realtime filtering as user types in medication field
         if (medicationInput) {
             medicationInput.addEventListener('input', performSearch);
         }

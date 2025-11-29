@@ -6,10 +6,12 @@ if (isset($_SESSION['user_id'])) {
     exit;
 }
 
+// Load Twig
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\TwigConfig;
 
+// Determine dark mode from cookie
 $darkMode = isset($_COOKIE['dark_mode']) ? $_COOKIE['dark_mode'] === 'true' : false;
 
 echo TwigConfig::render('reset_password.html.twig', [

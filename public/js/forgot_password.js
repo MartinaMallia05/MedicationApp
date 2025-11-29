@@ -1,4 +1,3 @@
-// Forget password button handler
 document.addEventListener("DOMContentLoaded", () => {
   const forgotForm = document.getElementById("forgotPasswordForm");
   const forgotMessage = document.getElementById("forgotMessage");
@@ -11,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const usernameInput = document.getElementById("username");
     const username = usernameInput.value.trim();
 
+    // If fields are empty
     if (!username) {
       showMessage("Please enter your username", "error");
       return;
@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (data && data.success && data.token) {
+        // Show the token with copy button
         forgotMessage.innerHTML = `
           <div class="bg-blue-50 dark:bg-blue-900 border-2 border-blue-500 rounded-lg p-6 text-center">
             <p class="text-green-600 dark:text-green-400 font-semibold mb-4">

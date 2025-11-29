@@ -1,5 +1,4 @@
 <?php
-// Suppress error display to prevent breaking JSON responses
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
@@ -20,6 +19,7 @@ header("Strict-Transport-Security: max-age=31536000; includeSubDomains");
 function sanitizeInput($input, $type = 'string') {
     if (empty($input)) return '';
     
+    // Sanitize based on type
     switch ($type) {
         case 'email':
             $clean = filter_var(trim($input), FILTER_SANITIZE_EMAIL);
@@ -33,6 +33,7 @@ function sanitizeInput($input, $type = 'string') {
     }
 }
 
+// CSRF token validation
 function validateCSRFToken() {
     if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token'])) {
         return false;
@@ -40,6 +41,7 @@ function validateCSRFToken() {
     return hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
 }
 
+// Rate limiting for registration and login
 function rateLimitCheck($action, $maxAttempts = 5, $timeWindow = 300) {
     $key = 'rate_limit_' . $action . '_' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
     
@@ -94,7 +96,7 @@ if (!isset($_SESSION['last_request'])) {
 
 // Only apply deduplication to registration
 if ($action === 'register') {
-    // Create request fingerprint for registration only
+    // Create request registration only
     $request_fingerprint = $action . '_' . md5($username ?? '');
     $current_time = time();
     
@@ -174,6 +176,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
         $stmt = $conn->prepare("INSERT INTO TBL_User (Username, Password_Hash, Role) VALUES (?,?,?)");
         $stmt->bind_param("sss", $username, $hash, $role);
         
+        // Execute and handle potential duplicate entry error
         if ($stmt->execute()) {
             $stmt->close();
             
@@ -214,15 +217,18 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             respond(['success' => false, 'message' => 'Invalid username format'], 400);
         }
 
+        // Fetch user with prepared statement
         $stmt = $conn->prepare("SELECT u.User_ID, u.Password_Hash, u.Is_Active, u.Role FROM TBL_User u WHERE u.Username=? LIMIT 1");
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $result = $stmt->get_result();
         
+        // Verify user exists
         if ($result->num_rows === 0) {
             respond(['success' => false, 'message' => 'Invalid username or password'], 401);
         }
 
+        // Verify password
         $user = $result->fetch_assoc();
         if (!$user['Is_Active']) {
             respond(['success' => false, 'message' => 'User inactive'], 401);
@@ -271,6 +277,7 @@ if (in_array($action, ['login', 'register', 'forgot_password', 'reset_password']
             respond(['success' => false, 'message' => 'Username not found'], 404);
         }
 
+        // Check existing valid token
         $user = $result->fetch_assoc();
         $now = date('Y-m-d H:i:s');
 
@@ -457,12 +464,12 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Required fields missing: ' . implode(', ', $missing)], 400);
         }
 
-        // Validate Patient ID Card format: 7 digits + 1 letter
+        // Validate Patient ID Card format is 7 digits and 1 letter
         if ($patientNumber && !preg_match('/^[0-9]{7}[A-Z]$/', $patientNumber)) {
             respond(['success' => false, 'message' => 'Patient ID Card must be 7 digits followed by a letter (e.g., 1234567A)'], 400);
         }
 
-        // Validate DOB: not in future, not more than 100 years ago
+        // Validate DOB can not be in future or not more than 100 years ago
         if ($dob) {
             $dobDate = strtotime($dob);
             $now = strtotime(date('Y-m-d'));
@@ -475,7 +482,7 @@ switch ($action) {
             }
         }
 
-        // Check uniqueness of Patient_Number
+        // Check uniqueness of Patient_Number (ID Card)
         if ($patientNumber) {
             $checkStmt = $conn->prepare("SELECT COUNT(*) as count FROM TBL_Patient WHERE Patient_Number = ?");
             $checkStmt->bind_param("s", $patientNumber);
@@ -525,7 +532,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Invalid data: ' . implode(', ', $missing) . ' missing or invalid'], 400);
         }
 
-        // Validate Patient ID Card format: 7 digits + 1 letter
+        // Validate Patient ID Card format is 7 digits and 1 letter
         if ($patientNumber && !preg_match('/^[0-9]{7}[A-Z]$/', $patientNumber)) {
             respond(['success' => false, 'message' => 'Patient ID Card must be 7 digits followed by a letter (e.g., 1234567A)'], 400);
         }
@@ -609,7 +616,7 @@ switch ($action) {
 
     // Add Medication
     case 'add_medication':
-        // Check user role (only doctors and nurses can prescribe medications)
+        // Check user role only doctors and nurses can prescribe medications
         $userRole = $_SESSION['role'] ?? '';
         if (!in_array($userRole, ['doctor', 'nurse'])) {
             respond(['success' => false, 'message' => 'Access denied. Only doctors and nurses can prescribe medications. Current role: ' . $userRole], 403);

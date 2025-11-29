@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
     
+    // Validation
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirm_password").value;
@@ -79,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       
-      // Check the success flag in the response
+      // Check success
       if (data.success) {
         showMessage(data.message + " Redirecting to login...", "success");
         registerForm.reset();

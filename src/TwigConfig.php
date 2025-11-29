@@ -12,8 +12,8 @@ class TwigConfig
         $loader = new FilesystemLoader(__DIR__ . '/../templates');
         $twig = new Environment($loader, [
             'cache' => false, // Disable cache for development
-            'debug' => true,
-            'autoescape' => 'html'
+            'debug' => true, // Enable debug mode
+            'autoescape' => 'html' // Enable auto escaping for HTML
         ]);
 
         return $twig->render($template, $data);

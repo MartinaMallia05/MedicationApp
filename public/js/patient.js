@@ -1,6 +1,5 @@
 let allPatients = [];
 
-// Debug: Intercept all fetch requests to track backend calls
 const originalFetch = window.fetch;
 window.fetch = function(...args) {
     console.log('FETCH REQUEST:', args);
@@ -55,6 +54,7 @@ function renderPatientsTable() {
         const addressParts = [patient.Add_1, patient.Add_2, patient.Add_3].filter(a => a);
         const address = addressParts.length > 0 ? addressParts.join(', ') : 'N/A';
         
+        // Populate row
         row.innerHTML = `
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(patient.Patient_Number) || 'N/A'}</td>
             <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">${window.commonUtils.escapeHtml(patient.Patient_Name)}</td>
@@ -97,6 +97,7 @@ window.editPatient = async function(id) {
         document.getElementById('address2').value = p.Add_2 || '';
         document.getElementById('address3').value = p.Add_3 || '';
         document.getElementById('countrySelect').value = p.Country_Rec_Ref;
+        // Load towns for selected country
         await window.commonUtils.loadTowns(p.Country_Rec_Ref);
         document.getElementById('townSelect').value = p.Town_Rec_Ref;
         document.getElementById('genderSelect').value = p.Gender_Rec_Ref;
@@ -123,6 +124,7 @@ window.deletePatient = async function(id) {
         
         if (data.success) {
             window.commonUtils.showNotification(data.message, 'success');
+            // Reset form if the deleted patient was being edited
             await loadPatients();
             await window.commonUtils.loadDropdowns();
         } else {
@@ -152,10 +154,11 @@ function setupPatientForm() {
         const town = document.getElementById('townSelect').value;
         const gender = document.getElementById('genderSelect').value;
         
-        console.log('🔍 PATIENT ID CHECK:', patientId, typeof patientId);
-        console.log('🔍 IS UPDATE?', !!patientId);
-        console.log('🔍 ACTION WILL BE:', patientId ? 'update_patient' : 'add_patient');
+        console.log('PATIENT ID CHECK:', patientId, typeof patientId);
+        console.log('IS UPDATE?', !!patientId);
+        console.log('ACTION WILL BE:', patientId ? 'update_patient' : 'add_patient');
         
+        // Validation
         if (!name || !surname || !country || !town || !gender) {
             console.log('CLIENT-SIDE VALIDATION FAILED');
             console.log('Missing:', {name, surname, country, town, gender});
@@ -195,6 +198,7 @@ function setupPatientForm() {
         console.log('Town dropdown - value:', townSelect?.value, 'selectedIndex:', townSelect?.selectedIndex);
         console.log('Gender dropdown - value:', genderSelect?.value, 'selectedIndex:', genderSelect?.selectedIndex);
         
+        // Log all form data entries
         console.log('All form data:');
         for (let [key, value] of formData.entries()) {
             console.log('  ', key, '=', value);
@@ -222,6 +226,7 @@ function setupPatientForm() {
         }
     });
     
+    // Reset form
     document.getElementById('patientReset')?.addEventListener('click', () => {
         form.reset();
         document.getElementById('patientID').value = '';
